@@ -46,17 +46,17 @@ class MoodleParser {
   /**
    * @var string логин преподавателя
    */
-  private $username = 'admin';
+  private $username = 'borzih.a';
 
   /**
    * @var string почта преподавателя, на которую придет письмо со списком студентов
    */
-  private $email = 'admin@admin.com';
+  private $email = 'boral660@gmail.com';
 
   /**
    * @var string пароль преподавателя
    */
-  private $password = 'admin';
+  private $password = 'qweQwe1$,560';
 
   public function __construct(){
     $this->init();
@@ -68,7 +68,7 @@ class MoodleParser {
    * @return bool удалось ли залогиниться
    */
   public function isAuth($data){
-    return preg_match('/Центр/', $data) === 1;
+    return (preg_match('/page-login-index/', $data) !== 1) &&(preg_match('/page-/', $data) === 1);
   }
 
   /**
@@ -93,7 +93,8 @@ class MoodleParser {
    * @return bool удалось ли авторизоваться
    */
   public function login() {
-    $ch = curl_init();
+  
+      $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $this->login_url); // отправляем на
     curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
@@ -107,8 +108,14 @@ class MoodleParser {
         'username' => $this->username,
         'password' => $this->password,
     ));
-
-    $is_auth = $this->isAuth(curl_exec($ch));
+	echo($this->login_url);
+	echo '<br>';
+	 echo($this->username);
+	echo '<br>';
+	 echo($this->password);
+	echo '<br>';
+	$ex=curl_exec($ch);
+    $is_auth = $this->isAuth($ex);
     curl_close($ch);
 
     return $is_auth;
