@@ -25,12 +25,16 @@ class MoodleParser {
    * @var string страница авторизации
    */
   private $login_url = 'http://edu.vstu.ru/login/index.php';
+    /**
+   * @var string страница c заданиями
+   */
+  private $task_url = '';
 
   /**
    * @var string страница с курсом
    */
   private $course_url = 'http://edu.vstu.ru/mod/poasassignment/view.php?id=2991&page=submissions';
-
+	
   private $task_id = array();
 
   /**
@@ -108,12 +112,6 @@ class MoodleParser {
         'username' => $this->username,
         'password' => $this->password,
     ));
-	echo($this->login_url);
-	echo '<br>';
-	 echo($this->username);
-	echo '<br>';
-	 echo($this->password);
-	echo '<br>';
 	$ex=curl_exec($ch);
     $is_auth = $this->isAuth($ex);
     curl_close($ch);
@@ -146,7 +144,7 @@ class MoodleParser {
    */
   public function go_to_course_answers($task_id) {
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "http://edu.vstu.ru/mod/poasassignment/view.php?id={$task_id}&page=submissions"); // отправляем на
+    curl_setopt($ch, CURLOPT_URL, "{$this->task_url}{$task_id}&page=submissions"); // отправляем на
     curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
@@ -154,8 +152,10 @@ class MoodleParser {
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);// просто отключаем проверку сертификата
     curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); // сохранять куки в файл
     curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
-
-    $is_get_course = $this->isGetCourse($this->answers_html = curl_exec($ch));
+	
+	$ex=curl_exec($ch);
+    $is_get_course = $this->isGetCourse($this->answers_html =  $ex);
+	
     curl_close($ch);
 
     return $is_get_course;
@@ -176,16 +176,15 @@ class MoodleParser {
     $task = null;
 
     $task_name = $xpath->query('//*[@id="region-main"]/div/h2/text()')->item(0)->nodeValue;
-    $course_name = $xpath->query('//*[@id="page-header"]/div[1]/div/h1')->item(0)->nodeValue;
-
+    $course_name = $xpath->query('//*[@id="page-header"]/div/div/h1')->item(0)->nodeValue;
     $this->links[$course_name] = array();
     $this->links[$course_name][$task_id] = array();
 
-    while($row_index < 1000) {
+    while($row_index < 10) {
       $row_index++;
       $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
-      if ($task !== null && ($task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->nodeValue) === 1)) {
-        $name = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c1"]/a')->item(0);
+      if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1  || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
+		$name = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c1"]/a')->item(0);
         $student_name = $name->nodeValue;
         $this->links[$course_name][$task_id][$student_name] = array();
         $this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
@@ -207,11 +206,13 @@ class MoodleParser {
       }
       $name = null;
       $task = null;
-    }
+    
+	}
 
     $students_count = count($this->links[$course_name][$task_id]);
-
-    echo "<h3>Ответ на <<{$task_name}>> в курсе <<{$course_name}>> предоставили {$students_count} студентов:</h3>";
+    echo "<h3>Ответ на << {$task_name} >>";
+	echo "	в курсе << {$course_name} >>";
+	echo"	предоставили {$students_count} студентов:</h3>";
     foreach($this->links[$course_name][$task_id] as $key => $value) {
       echo '<p><a href="'. $value['profile'] .'">' . $key . '</a> предоставил для проверки ';
 
@@ -221,6 +222,7 @@ class MoodleParser {
 
       echo '</p>';
     }
+
   }
 
   /**
@@ -283,6 +285,9 @@ class MoodleParser {
 
       if ($ini_array['login_url'] !== null) {
         $this->login_url = $ini_array['login_url'];
+      }
+	  if ($ini_array['task_url'] !== null) {
+        $this->task_url = $ini_array['task_url'];
       }
 
       if ($ini_array['task_id'] !== null) {
