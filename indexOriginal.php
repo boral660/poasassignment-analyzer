@@ -20,7 +20,10 @@ class MoodleParser {
    * @var array список курсов, заданий и студентов с ответами для проверки
    */
   private $links = array();
-
+	/**
+   * @var string путь к winRar
+   */
+  private $path_to_winrar='"C:\\Program Files\\WinRAR\\WinRAR.exe"';
   /**
    * @var string страница авторизации
    */
@@ -132,7 +135,7 @@ class MoodleParser {
         $this->parse($task_id);
 
         $this->save_answers();
-        $this->send_mail();
+      //  $this->send_mail();
       }
     }
   }
@@ -257,12 +260,16 @@ class MoodleParser {
       </html>';
 
     $headers  = "Content-type: text/html; charset=windows-1251 \r\n";
-    $headers .= "From: MoodleParser <grvlter@gmail.com>\r\n";
+    $headers .= "From: MoodleParser <boral6601@gmail.com>\r\n";
     /*$headers .= "Bcc: birthday-archive@example.com\r\n";*/
 
-    if (mail($this->email, $subject, $message, $headers)) {
+  //  if (mail($this->email, $subject, $message, $headers)) {
+    //  echo '<p>Письмо успешно отправлено</p>';
+   // }
+   if (mail("boral660@gmail.com", "My Subject", "Line 1\nLine 2\nLine 3",$headers)) {
       echo '<p>Письмо успешно отправлено</p>';
     }
+ 
   }
 
   /**
@@ -303,6 +310,27 @@ class MoodleParser {
       }
     }
   }
+    /**
+   * Распаковывает один файл
+   * @param $file_path имя файла для распаковки
+   */
+  public function unpack_file($file_path) {
+	  
+	 $errors = array();
+	 $file_ext=strrchr($file_path, '.');
+	 if($file_ext=='.rar' || $file_ext=='.zip' || $file_ext=='.tar' || $file_ext=='.gz' || $file_ext=='.bz2' || $file_ext=='.7z' || $file_ext=='.z')
+	 {
+	 $name=strrchr($file_path, '\\');
+	 $path=substr($file_path, 0, strlen($file_path)-strlen($name)+1);
+	exec($this->path_to_winrar . ' x "' . $file_path .'" "' . $path . '"' , $errors);
+	 }
+  }
+    /**
+   * Тестирует выполненные работы
+   */
+  public function test_answers() {
+	  
+  }
 
   /**
    * Скачивает выполненные работы
@@ -333,21 +361,23 @@ class MoodleParser {
               mkdir($dir);
             }
 
-            if (!is_dir($dir . '\\' . iconv("UTF-8", "Windows-1251", $course_name))) {
-              mkdir($dir . '\\' . iconv("UTF-8", "Windows-1251", $course_name));
+            if (!is_dir($dir . '\\' .    $course_name)) {
+              mkdir($dir . '\\' .    $course_name);
             }
 
-            if (!is_dir($dir . '\\' . iconv("UTF-8", "Windows-1251", $course_name) . '\\' . iconv("UTF-8", "Windows-1251", $task_name))) {
-              mkdir($dir . '\\' . iconv("UTF-8", "Windows-1251", $course_name) . '\\' . iconv("UTF-8", "Windows-1251", $task_name));
+            if (!is_dir($dir . '\\' .    $course_name . '\\' .    $task_name)) {
+              mkdir($dir . '\\' .    $course_name . '\\' .    $task_name);
             }
 
-            if (!is_dir($dir . '\\' . iconv("UTF-8", "Windows-1251", $course_name) . '\\' . iconv("UTF-8", "Windows-1251", $task_name) . '\\' . iconv("UTF-8", "Windows-1251", $name))) {
-              mkdir($dir . '\\' . iconv("UTF-8", "Windows-1251", $course_name) . '\\' . iconv("UTF-8", "Windows-1251", $task_name) . '\\' . iconv("UTF-8", "Windows-1251", $name));
+            if (!is_dir($dir . '\\' .    $course_name . '\\' .    $task_name . '\\' .    $name)) {
+              mkdir($dir . '\\' .    $course_name . '\\' .    $task_name . '\\' .   $name);
             }
-
-            $fp = fopen($dir . '\\' . iconv("UTF-8", "Windows-1251", $course_name) . '\\' . iconv("UTF-8", "Windows-1251", $task_name) . '\\' . iconv("UTF-8", "Windows-1251", $name) . '\\' . iconv("UTF-8", "Windows-1251", $output_filename), 'w');
+		
+            $fp = fopen($dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename, 'w');
             fwrite($fp, $result);
             fclose($fp);
+			$name=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
+			$this->unpack_file($name);
           }
         }
       }
