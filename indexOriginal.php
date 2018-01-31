@@ -33,10 +33,6 @@ class MoodleParser {
    */
   private $task_url = '';
 
-  /**
-   * @var string страница с курсом
-   */
-  private $course_url = 'http://edu.vstu.ru/mod/poasassignment/view.php?id=2991&page=submissions';
 	
   private $task_id = array();
 
@@ -84,7 +80,7 @@ class MoodleParser {
    * @return bool удалось ли получить страницу с заданиями
    */
   public function isGetCourse($data){
-    return preg_match('/Задание/', $data) === 1;
+    return (preg_match('/page-mod-poasassignment-view/', $data) === 1);
   }
 
   /**
@@ -183,7 +179,8 @@ class MoodleParser {
     $this->links[$course_name] = array();
     $this->links[$course_name][$task_id] = array();
 
-    while($row_index < 10) {
+    while($row_index < 10) // Конечно увеличить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    {
       $row_index++;
       $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
       if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1  || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
@@ -312,7 +309,7 @@ class MoodleParser {
   }
     /**
    * Распаковывает один файл
-   * @param $file_path имя файла для распаковки
+   * @param $file_path путь к файлу для распаковки
    */
   public function unpack_file($file_path) {
 	  
@@ -350,7 +347,7 @@ class MoodleParser {
             curl_setopt($ch, CURLOPT_AUTOREFERER, false);
             curl_setopt($ch, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_1);
             curl_setopt($ch, CURLOPT_HEADER, 0);
-            curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); // сохранять куки в файл
+            curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); 
             curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
 
             $result = curl_exec($ch);
@@ -377,7 +374,7 @@ class MoodleParser {
             fwrite($fp, $result);
             fclose($fp);
 			$name=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
-			$this->unpack_file($name);
+		      	$this->unpack_file($name);
           }
         }
       }
