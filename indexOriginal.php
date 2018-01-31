@@ -33,7 +33,7 @@ class MoodleParser {
    */
   private $task_url = '';
 
-	
+
   private $task_id = array();
 
   /**
@@ -130,8 +130,8 @@ class MoodleParser {
       if ($is_get_course === true) {
         $this->parse($task_id);
 
-        $this->save_answers();
-      //  $this->send_mail();
+      $this->save_answers();
+    //  $this->send_mail();
       }
     }
   }
@@ -154,7 +154,7 @@ class MoodleParser {
 	
 	$ex=curl_exec($ch);
     $is_get_course = $this->isGetCourse($this->answers_html =  $ex);
-	
+
     curl_close($ch);
 
     return $is_get_course;
@@ -196,8 +196,8 @@ class MoodleParser {
             $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_link']
                 = $xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//@href')->item($task_index)->nodeValue; // ссылка на ответ
             $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_name']
-                = $xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//text()')->item($task_index)->nodeValue; // наименование ответа
-            $task_index++;
+                = $xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//text()')->item($task_index*2)->nodeValue; // наименование ответа
+              $task_index++;
           } else {
             break;
           }
@@ -317,9 +317,9 @@ class MoodleParser {
 	 $file_ext=strrchr($file_path, '.');
 	 if($file_ext=='.rar' || $file_ext=='.zip' || $file_ext=='.tar' || $file_ext=='.gz' || $file_ext=='.bz2' || $file_ext=='.7z' || $file_ext=='.z')
 	 {
-	 $name=strrchr($file_path, '\\');
-	 $path=substr($file_path, 0, strlen($file_path)-strlen($name)+1);
-	exec($this->path_to_winrar . ' x "' . $file_path .'" "' . $path . '"' , $errors);
+		$name=strrchr($file_path, '\\');
+		$path=substr($file_path, 0, strlen($file_path)-strlen($name)+1);
+		exec($this->path_to_winrar . ' x "' . $file_path .'" "' . $path . '"' , $errors);
 	 }
   }
     /**
@@ -339,7 +339,7 @@ class MoodleParser {
           foreach ($student['answers'] as $answer) {
             $host = $answer['answer_link'];
             $output_filename = $answer['answer_name'];
-
+         
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $host);
             curl_setopt($ch, CURLOPT_VERBOSE, 1);
@@ -369,12 +369,12 @@ class MoodleParser {
             if (!is_dir($dir . '\\' .    $course_name . '\\' .    $task_name . '\\' .    $name)) {
               mkdir($dir . '\\' .    $course_name . '\\' .    $task_name . '\\' .   $name);
             }
-		
+
             $fp = fopen($dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename, 'w');
             fwrite($fp, $result);
             fclose($fp);
-			$name=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
-		      	$this->unpack_file($name);
+			      $name=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
+		 //     	$this->unpack_file($name);
           }
         }
       }
