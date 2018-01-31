@@ -319,7 +319,7 @@ class MoodleParser {
 	 {
 		$name=strrchr($file_path, '\\');
 		$path=substr($file_path, 0, strlen($file_path)-strlen($name)+1);
-		exec($this->path_to_winrar . ' x "' . $file_path .'" "' . $path . '"' , $errors);
+		exec($this->path_to_winrar . ' x -o+ "' . $file_path .'" "' . $path . '"' , $errors);
 	 }
   }
     /**
@@ -373,7 +373,7 @@ class MoodleParser {
             fwrite($fp, $result);
             fclose($fp);
 			      $file_path=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
-		     // 	$this->unpack_file($file_path);
+		     	$this->unpack_file($file_path);
           }
         }
       }
