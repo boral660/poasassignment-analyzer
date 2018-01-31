@@ -339,7 +339,6 @@ class MoodleParser {
           foreach ($student['answers'] as $answer) {
             $host = $answer['answer_link'];
             $output_filename = $answer['answer_name'];
-         
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $host);
             curl_setopt($ch, CURLOPT_VERBOSE, 1);
@@ -349,7 +348,7 @@ class MoodleParser {
             curl_setopt($ch, CURLOPT_HEADER, 0);
             curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); 
             curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
-
+        
             $result = curl_exec($ch);
             curl_close($ch);
 
@@ -373,8 +372,8 @@ class MoodleParser {
             $fp = fopen($dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename, 'w');
             fwrite($fp, $result);
             fclose($fp);
-			      $name=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
-		 //     	$this->unpack_file($name);
+			      $file_path=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
+		     // 	$this->unpack_file($file_path);
           }
         }
       }
