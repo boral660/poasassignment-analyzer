@@ -83,54 +83,64 @@ class MoodleParser {
     public function isAuth($data) {
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
-     /**
+
+    /**
+     * Производит построение проекта используя CMakeLists файл.
+     * @param string путь к файлу
+     */
+    public function building_project($path) {
+        if (!is_dir($path . '/build')) {
+            mkdir($path . '/build');
+        }
+        $cmake_path = $this->create_cmakelist($path);
+        if ($cmake_path != NULL) {
+            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -B"' . $path . '\\build" -H"' . $path . '\\build"';
+            exec($comand, $errors);
+        }
+    }
+
+    /**
      * Создаёт файл для построенния проекта
      * @param string путь к файлам проекта
      */
     public function create_cmakelist($path) {
-        $source_files=$this->recursiveGlob($path,'*.cpp');
-        if(!empty($source_files))
-        {
-            $header_files=$this->recursiveGlob($path,'*.h');
+        $cmake_path = $path . "/build/CMakeLists.txt";
+        $source_files = $this->recursiveGlob($path, '*.cpp');
+        if (!empty($source_files)) {
+            $header_files = $this->recursiveGlob($path, '*.h');
             // Создание файла
-            $fp = fopen($path . "/CMakeLists.txt", 'w');
+            $fp = fopen($cmake_path, 'w');
             // Наполнение файла
-            $body="";
+            $body = "";
             // Установление минимальной версии cmake
-            $body.="cmake_minimum_required(VERSION 2.8)\r\n";
+            $body .= "cmake_minimum_required(VERSION 2.8)\r\n";
             // Установление файлов с кодом
-            $body.="set(SOURCE";
-            foreach ($source_files as $sfile)
-            {
-                $body.=" ";
-                $res = substr($sfile, strlen($path)+1);
-                $body.=$res;
+            $body .= "set(SOURCE";
+            foreach ($source_files as $sfile) {
+                $body .= " ";
+                $res = substr($sfile, strlen($path) + 1);
+                $res = str_replace('\\', '/', $res);
+                $body .= '../' . $res;
             }
-            $body.=")\r\n";
-            
-            if(!empty($header_files))
-            {
-            // Заголовочные файлы
-            $body.="set(HEADER";
-            foreach ($header_files as $hfile)
-            {
-                $body.=" ";
-                $res = substr($hfile, strlen($path)+1);
-                $body.=$res;
+            $body .= ")\r\n";
+
+            if (!empty($header_files)) {
+                // Заголовочные файлы
+                $body .= "set(HEADER";
+                foreach ($header_files as $hfile) {
+                    $body .= " ";
+                    $res = substr($hfile, strlen($path) + 1);
+                    $res = str_replace('\\', '/', $res);
+                    $body .= '../' . $res;
+                }
+                $body .= ")\r\n";
             }
-            $body.=")\r\n";
-            }
-            $body.='add_executable(main ${SOURCE} ${HEADER})';
-             fwrite($fp, $body);
-             fclose($fp);
-            //Вписать версию
-            //Добавить в переменную все файлы cpp
-            //Добавить в переменную все файлы h
-            //Добавляем источники для создания исполняемых файлов
-            
-           // mkdir($path . '\\' . build);
-           
+            $body .= 'add_executable(main ${SOURCE} ${HEADER})';
+            fwrite($fp, $body);
+            fclose($fp);
+            return $cmake_path;
         }
+        return NULL;
     }
 
     /**
@@ -456,7 +466,7 @@ class MoodleParser {
                         fclose($fp);
                         $file_path = $dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name . '\\' . $output_filename;
                         $this->unpack_file($file_path);
-                        $this->create_cmakelist($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
+                        $this->building_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
                     }
                 }
             }
