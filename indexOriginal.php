@@ -83,6 +83,55 @@ class MoodleParser {
     public function isAuth($data) {
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
+     /**
+     * Создаёт файл для построенния проекта
+     * @param string путь к файлам проекта
+     */
+    public function create_cmakelist($path) {
+        $source_files=$this->recursiveGlob($path,'*.cpp');
+        if(!empty($source_files))
+        {
+            $header_files=$this->recursiveGlob($path,'*.h');
+            // Создание файла
+            $fp = fopen($path . "/CMakeLists.txt", 'w');
+            // Наполнение файла
+            $body="";
+            // Установление минимальной версии cmake
+            $body.="cmake_minimum_required(VERSION 2.8)\r\n";
+            // Установление файлов с кодом
+            $body.="set(SOURCE";
+            foreach ($source_files as $sfile)
+            {
+                $body.=" ";
+                $res = substr($sfile, strlen($path)+1);
+                $body.=$res;
+            }
+            $body.=")\r\n";
+            
+            if(!empty($header_files))
+            {
+            // Заголовочные файлы
+            $body.="set(HEADER";
+            foreach ($header_files as $hfile)
+            {
+                $body.=" ";
+                $res = substr($hfile, strlen($path)+1);
+                $body.=$res;
+            }
+            $body.=")\r\n";
+            }
+            $body.='add_executable(main ${SOURCE} ${HEADER})';
+             fwrite($fp, $body);
+             fclose($fp);
+            //Вписать версию
+            //Добавить в переменную все файлы cpp
+            //Добавить в переменную все файлы h
+            //Добавляем источники для создания исполняемых файлов
+            
+           // mkdir($path . '\\' . build);
+           
+        }
+    }
 
     /**
      * Определяет, удалось ли получить страницу с заданиями
@@ -407,7 +456,7 @@ class MoodleParser {
                         fclose($fp);
                         $file_path = $dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name . '\\' . $output_filename;
                         $this->unpack_file($file_path);
-                        $this->find_cpp_file($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
+                        $this->create_cmakelist($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
                     }
                 }
             }
