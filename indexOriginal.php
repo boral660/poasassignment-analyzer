@@ -41,6 +41,7 @@ class MoodleParser {
      */
     private $path_to_CMake = 'C:\\Program Files\\CMake\\bin';
 
+  
     /**
      * @var array номера заданий, которые необходимо проверить
      */
@@ -94,7 +95,7 @@ class MoodleParser {
         }
         $cmake_path = $this->create_cmakelist($path);
         if ($cmake_path != NULL) {
-            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -B"' . $path . '\\build" -H"' . $path . '\\build"';
+            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -B"' . $path . '\\build" -H"' . $path . '\\build" ';
             exec($comand, $errors);
         }
     }
@@ -135,7 +136,9 @@ class MoodleParser {
                 }
                 $body .= ")\r\n";
             }
-            $body .= 'add_executable(main ${SOURCE} ${HEADER})';
+            $body .= "add_executable(main \${SOURCE} \${HEADER})\r\n";
+            $body .="SET(MAKE_C_COMPILER C:/MinGW/bin/gcc.exe)\r\n";
+            $body .="SET(MAKE_CXX_COMPILER C:/MinGW/bin/g++.exe)\r\n";
             fwrite($fp, $body);
             fclose($fp);
             return $cmake_path;
