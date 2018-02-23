@@ -1,11 +1,5 @@
 <?php
 
-/* class MoodleParserCreate {
-  public static function create_parser() {
-  return new MoodleParser();
-  }
-  } */
-
 /**
  * Class MoodleParser Выполняет парсинг страницы с ответами на мудл
  */
