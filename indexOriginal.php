@@ -23,11 +23,11 @@ class MoodleParser {
 	/**
    * @var string путь к winRar
    */
-  private $path_to_winrar='"C:\\Program Files\\WinRAR\\WinRAR.exe"';
+  private $path_to_winrar='';
   /**
    * @var string страница авторизации
    */
-  private $login_url = 'http://edu.vstu.ru/login/index.php';
+  private $login_url = '';
     /**
    * @var string страница c заданиями
    */
@@ -49,17 +49,17 @@ class MoodleParser {
   /**
    * @var string логин преподавателя
    */
-  private $username = 'borzih.a';
+  private $username = '';
 
   /**
    * @var string почта преподавателя, на которую придет письмо со списком студентов
    */
-  private $email = 'boral660@gmail.com';
+  private $email = '';
 
   /**
    * @var string пароль преподавателя
    */
-  private $password = 'qweQwe1$,560';
+  private $password = '';
 
   public function __construct(){
     $this->init();
@@ -131,7 +131,7 @@ class MoodleParser {
         $this->parse($task_id);
 
       $this->save_answers();
-    //  $this->send_mail();
+   
       }
     }
   }
@@ -179,7 +179,7 @@ class MoodleParser {
     $this->links[$course_name] = array();
     $this->links[$course_name][$task_id] = array();
 
-    while($row_index < 10) // Конечно увеличить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    while($row_index < 999) 
     {
       $row_index++;
       $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
@@ -225,49 +225,7 @@ class MoodleParser {
 
   }
 
-  /**
-   * Выполняет отправку на почту письма со списком студентов, работы которых нужно проверить
-   */
-  public function send_mail() {
-    $subject = "Список студентов";
-
-    $students_list = '';
-
-    foreach($this->links as $course_name => $course) {
-      foreach($course as $task_name => $task) {
-        $students_count = count($task);
-        $students_list .= "<h3>Ответ на <<{$task_name}>> в курсе <<{$course_name}>> предоставили {$students_count} студентов:</h3>";
-        foreach ($task as $name => $student) {
-          $students_list .= '<p><a href="'. $student['profile'] .'">' . $name . '</a> предоставил для проверки ';
-          foreach ($student['answers'] as $answer) {
-            $students_list .= '<a href="' . $answer['answer_link'] . '">' . $answer['answer_name'] . '</a> ';
-          }
-        }
-      }
-    }
-
-    $message = '
-      <html>
-          <head>
-              <title>Студенты, работы которых нужно проверить</title>
-          </head>
-          <body>
-              ' . $students_list . '
-          </body>
-      </html>';
-
-    $headers  = "Content-type: text/html; charset=windows-1251 \r\n";
-    $headers .= "From: MoodleParser <boral6601@gmail.com>\r\n";
-    /*$headers .= "Bcc: birthday-archive@example.com\r\n";*/
-
-  //  if (mail($this->email, $subject, $message, $headers)) {
-    //  echo '<p>Письмо успешно отправлено</p>';
-   // }
-   if (mail("boral660@gmail.com", "My Subject", "Line 1\nLine 2\nLine 3",$headers)) {
-      echo '<p>Письмо успешно отправлено</p>';
-    }
  
-  }
 
   /**
    * Инициализирует данными из конфигурационного файла
@@ -285,6 +243,9 @@ class MoodleParser {
 
       if ($ini_array['email'] !== null) {
         $this->email = $ini_array['email'];
+      }
+	  if ($ini_array['path_to_winrar'] !== null) {
+        $this->path_to_winrar = $ini_array['path_to_winrar'];
       }
 
       if ($ini_array['login_url'] !== null) {
@@ -319,14 +280,8 @@ class MoodleParser {
 	 {
 		$name=strrchr($file_path, '\\');
 		$path=substr($file_path, 0, strlen($file_path)-strlen($name)+1);
-		exec($this->path_to_winrar . ' x -o+ "' . $file_path .'" "' . $path . '"' , $errors);
+		exec('"' . $this->path_to_winrar . '"' . ' x -o+ "' . $file_path .'" "' . $path . '"' , $errors);
 	 }
-  }
-    /**
-   * Тестирует выполненные работы
-   */
-  public function test_answers() {
-	  
   }
 
   /**
@@ -372,8 +327,10 @@ class MoodleParser {
             $fp = fopen($dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename, 'w');
             fwrite($fp, $result);
             fclose($fp);
-			      $file_path=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
-		     	$this->unpack_file($file_path);
+			if($this->path_to_winrar!=''){
+				$file_path=$dir . '\\' .  $course_name . '\\' . $task_name . '\\' .  $name . '\\' .  $output_filename;
+				$this->unpack_file($file_path);
+			}
           }
         }
       }
