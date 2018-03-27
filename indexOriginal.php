@@ -95,7 +95,7 @@ class MoodleParser {
         }
         $cmake_path = $this->create_cmakelist($path);
         if ($cmake_path != NULL) {
-            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -B"' . $path . '\\build" -H"' . $path . '\\build" ';
+            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build" >>log.txt';
             exec($comand, $errors);
         }
     }
@@ -260,7 +260,6 @@ class MoodleParser {
 
         return $is_get_course;
     }
-
     /**
      * Выполняет парсинг страницы с ответами
      * @param $task_id идентификатор задания для парсинга
@@ -285,7 +284,7 @@ class MoodleParser {
             $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
             if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1 || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
                 $name = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c1"]/a')->item(0);
-                $student_name = $name->nodeValue;
+                $student_name = $name->nodeValue;    
                 $this->links[$course_name][$task_id][$student_name] = array();
                 $this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
 
