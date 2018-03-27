@@ -35,6 +35,11 @@ class MoodleParser {
      */
     private $path_to_CMake = 'C:\\Program Files\\CMake\\bin';
 
+     /**
+     * @var string путь к Make
+     */
+    private $path_to_Make = 'C:\\Program Files\\CMake\\bin';
+
   
     /**
      * @var array номера заданий, которые необходимо проверить
@@ -92,6 +97,14 @@ class MoodleParser {
             $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
             exec($comand, $errors);
         }
+    }
+      /**
+     * Производит компиляцию проекта используя MakeFile
+     * @param string путь к файлу
+     */
+    public function compiling_project($path) {
+            $comand = '"' . $this->path_to_CMake . '\\make.exe" --directory="'. $path . '\\build" > "' . $path . '"\\build\\log.txt 2> "' . $path . '"\\build\\error.txt';
+            exec($comand, $errors); 
     }
 
     /**
@@ -473,6 +486,7 @@ class MoodleParser {
                         $file_path = $dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name . '\\' . $output_filename;
                         $this->unpack_file($file_path);
                         $this->building_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
+                        $this->compiling_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
                     }
                 }
             }
