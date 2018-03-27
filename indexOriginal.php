@@ -95,7 +95,7 @@ class MoodleParser {
         }
         $cmake_path = $this->create_cmakelist($path);
         if ($cmake_path != NULL) {
-            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build" >>log.txt';
+            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
             exec($comand, $errors);
         }
     }
@@ -260,6 +260,16 @@ class MoodleParser {
 
         return $is_get_course;
     }
+
+    function translit($str, $onEng) {
+        $rus = array('А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я', 'а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я');
+        $lat = array('A', 'B', 'V', 'G', 'D', 'E', 'E', 'Gh', 'Z', 'I', 'Y', 'K', 'L', 'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'F', 'H', 'C', 'Ch', 'Sh', 'Sch', 'Y', 'Y', 'Y', 'E', 'Yu', 'Ya', 'a', 'b', 'v', 'g', 'd', 'e', 'e', 'gh', 'z', 'i', 'y', 'k', 'l', 'm', 'n', 'o', 'p', 'r', 's', 't', 'u', 'f', 'h', 'c', 'ch', 'sh', 'sch', 'y', 'y', 'y', 'e', 'yu', 'ya');
+        if($onEng)
+            return str_replace($rus, $lat, $str);
+        else
+            return str_replace($lat, $rus, $str);
+      }
+
     /**
      * Выполняет парсинг страницы с ответами
      * @param $task_id идентификатор задания для парсинга
@@ -284,7 +294,7 @@ class MoodleParser {
             $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
             if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1 || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
                 $name = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c1"]/a')->item(0);
-                $student_name = $name->nodeValue;    
+                $student_name =$this->translit($name->nodeValue,true);    
                 $this->links[$course_name][$task_id][$student_name] = array();
                 $this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
 
@@ -332,7 +342,7 @@ class MoodleParser {
                 $students_count = count($task);
                 $students_list .= "<h3>Ответ на <<{$task_name}>> в курсе <<{$course_name}>> предоставили {$students_count} студентов:</h3>";
                 foreach ($task as $name => $student) {
-                    $students_list .= '<p><a href="' . $student['profile'] . '">' . $name . '</a> предоставил для проверки ';
+                    $students_list .= '<p><a href="' . $student['profile'] . '">' .  $name . '</a> предоставил для проверки ';
                     foreach ($student['answers'] as $answer) {
                         $students_list .= '<a href="' . $answer['answer_link'] . '">' . $answer['answer_name'] . '</a> ';
                     }
