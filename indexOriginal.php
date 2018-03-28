@@ -35,6 +35,12 @@ class MoodleParser {
      */
     private $path_to_CMake = 'C:\\Program Files\\CMake\\bin';
 
+      /**
+     * @var string путь к qMake
+     */
+    private $path_to_QMake = 'C:\\Qt2\\5.5\\mingw492_32\\bin';
+
+
      /**
      * @var string путь к Make
      */
@@ -84,18 +90,43 @@ class MoodleParser {
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
 
+ /**
+     * Удаление папки со всем содержимым
+     * @param $dir путь к папке
+     */
+    public function remove_directory($dir) {
+        if ($objs = glob($dir."/*")) {
+           foreach($objs as $obj) {
+             is_dir($obj) ? $this->remove_directory($obj) : unlink($obj);
+           }
+        }
+        rmdir($dir);
+      }
     /**
      * Производит построение проекта используя CMakeLists файл.
      * @param string путь к файлу
      */
     public function building_project($path) {
-        if (!is_dir($path . '/build')) {
-            mkdir($path . '/build');
+        if (is_dir($path . '/build')) {
+            $this->remove_directory($path . '/build');
         }
-        $cmake_path = $this->create_cmakelist($path);
-        if ($cmake_path != NULL) {
-            $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
-            exec($comand, $errors);
+        mkdir($path . '/build');
+        $qtfiles = $this->recursiveGlob($path, '*.pro');
+        if(empty($qtfiles))
+        {
+            $cmake_path = $this->create_cmakelist($path);
+            if ($cmake_path != NULL) {
+                $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
+                exec($comand, $errors);
+            }
+        }
+        else
+        {
+            foreach ($qtfiles as $qfile) {
+                $comand = '"' . $this->path_to_QMake . '\\qmake.exe" "' . __DIR__ . '\\' . dirname($qfile) . '" 2> qmakelog.txt' ;
+                exec($comand, $errors);
+            }
+
         }
     }
       /**
@@ -103,7 +134,7 @@ class MoodleParser {
      * @param string путь к файлу
      */
     public function compiling_project($path) {
-            $comand = '"' . $this->path_to_CMake . '\\make.exe" --directory="'. $path . '\\build" > "' . $path . '"\\build\\log.txt 2> "' . $path . '"\\build\\error.txt';
+            $comand = '"' . $this->path_to_CMake . '\\make.exe" --directory="'. $path . '\\build" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
             exec($comand, $errors); 
     }
 
@@ -143,6 +174,7 @@ class MoodleParser {
                 }
                 $body .= ")\r\n";
             }
+            # Widgets finds its own dependencies.
             $body .= "add_executable(main \${SOURCE} \${HEADER})\r\n";
             $body .="SET(MAKE_C_COMPILER C:/MinGW/bin/gcc.exe)\r\n";
             $body .="SET(MAKE_CXX_COMPILER C:/MinGW/bin/g++.exe)\r\n";
