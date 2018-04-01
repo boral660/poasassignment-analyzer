@@ -18,7 +18,7 @@ class MoodleParser {
     /**
      * @var string путь к winRar
      */
-    private $path_to_winrar = 'C:\\Program Files\\WinRAR\\WinRAR.exe';
+    private $path_to_winrar = '';
 
     /**
      * @var string страница авторизации
@@ -33,18 +33,18 @@ class MoodleParser {
     /**
      * @var string путь к cMake
      */
-    private $path_to_CMake = 'C:\\Program Files\\CMake\\bin';
+    private $path_to_CMake = '';
 
       /**
      * @var string путь к qMake
      */
-    private $path_to_QMake = 'C:\\Qt2\\5.5\\mingw492_32\\bin';
+    private $path_to_QMake = '';
 
 
      /**
      * @var string путь к Make
      */
-    private $path_to_Make = 'C:\\Program Files\\CMake\\bin';
+    private $path_to_Make = '';
 
   
     /**
@@ -105,6 +105,7 @@ class MoodleParser {
     /**
      * Производит построение проекта используя CMakeLists файл.
      * @param string путь к файлу
+	 * @return данный проект являются ли проектом qt
      */
     public function building_project($path) {
         if (is_dir($path . '/build')) {
@@ -119,6 +120,7 @@ class MoodleParser {
                 $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
                 exec($comand, $errors);
             }
+			return false;
         }
         else
         {
@@ -126,15 +128,20 @@ class MoodleParser {
                 $comand = '"' . $this->path_to_QMake . '\\qmake.exe" "' . __DIR__ . '\\' . dirname($qfile) . '" 2> qmakelog.txt' ;
                 exec($comand, $errors);
             }
-
+			return true;
         }
     }
       /**
      * Производит компиляцию проекта используя MakeFile
      * @param string путь к файлу
      */
-    public function compiling_project($path) {
-            $comand = '"' . $this->path_to_CMake . '\\make.exe" --directory="'. $path . '\\build" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
+    public function compiling_project($path, $isQt) {
+		if($isQt){
+			$comand  = '"' . $this->path_to_Make . '\\make.exe" --directory="'. $path . '\\build" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
+		}
+		else{
+			$comand  = '"' . $this->path_to_Make . '\\make.exe" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
+		}
             exec($comand, $errors); 
     }
 
@@ -447,6 +454,22 @@ class MoodleParser {
             if ($ini_array['files_download_to'] !== null) {
                 $this->files_download_to = $ini_array['files_download_to'];
             }
+			
+			if ($ini_array['path_to_winrar'] !== null) {
+                $this->path_to_winrar = $ini_array['path_to_winrar'];
+            }
+			
+			if ($ini_array['path_to_CMake'] !== null) {
+                $this->path_to_CMake = $ini_array['path_to_CMake'];
+            }
+			
+			if ($ini_array['path_to_QMake'] !== null) {
+                $this->path_to_QMake = $ini_array['path_to_QMake'];
+            }
+			
+			if ($ini_array['path_to_Make'] !== null) {
+                $this->path_to_Make = $ini_array['path_to_Make'];
+            }
         }
     }
 
@@ -517,8 +540,8 @@ class MoodleParser {
                         fclose($fp);
                         $file_path = $dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name . '\\' . $output_filename;
                         $this->unpack_file($file_path);
-                        $this->building_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
-                        $this->compiling_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
+                        $isQt = $this->building_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
+                        $this->compiling_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name, $isQt);
                     }
                 }
             }
