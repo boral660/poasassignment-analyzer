@@ -123,12 +123,12 @@ class MoodleParser {
             $cmake_path = $this->create_cmakelist($path);
             if ($cmake_path != NULL) {
 				if($this->linux_client) {
-					$comand = "cmake";
+					$comand = 'cmake  -G "Unix Makefiles"';
 				}
 				else {
-					$comand = '"' . $this->path_to_CMake . '\\cmake.exe"';
+					$comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles"';
 				}
-                $comand .= ' -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
+                $comand .= ' -B"' . $path . '/build" -H"' . $path . '/build"';
                 exec($comand, $errors);
             }
 			return false;
@@ -142,7 +142,7 @@ class MoodleParser {
 				else {
 					$comand = '"' . $this->path_to_QMake . '\\qmake.exe"' ;
 				}
-                $comand .= ' "' . __DIR__ . '\\' . dirname($qfile) . '" 2> qmakelog.txt' ;
+                $comand .= ' "' . __DIR__ . '/' . dirname($qfile) . '" 2> qmakelog.txt' ;
                 exec($comand, $errors);
             }
 			return true;
@@ -153,25 +153,18 @@ class MoodleParser {
      * @param string путь к файлу
      */
     public function compiling_project($path, $isQt) {
-		if($isQt){
-			if($this->linux_client) {
-					$comand = "make";
-				}
-				else {
-					$comand = '"' . $this->path_to_Make . '\\make.exe"' ;
-				}
-			$comand  .= ' --directory="'. $path . '\\build" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
-		}
-		else{
 				if($this->linux_client) {
 					$comand = "make";
 				}
 				else {
 					$comand = '"' . $this->path_to_Make . '\\make.exe"' ;
 				}
+            		if($isQt){
+                       $comand .= ' --directory="'. $path . '/build"';
+}
 				
-			$comand  .= ' > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
-		}
+			$comand  .= ' > "' . $path . '"/build/makeLog.txt 2> "' . $path . '"/build/makeError.txt';
+
             exec($comand, $errors); 
     }
 
@@ -301,11 +294,10 @@ class MoodleParser {
             $is_get_course = $this->go_to_course_answers($task_id);
             echo $is_get_course ? 'Course success' : 'Course failed';
             echo '<br>';
-
             if ($is_get_course === true) {
                 $this->parse($task_id);
-
                 $this->save_answers();
+                                     
                 //  $this->send_mail();
             }
         }
@@ -352,7 +344,7 @@ class MoodleParser {
         $dom = new DOMDocument();
         @$dom->loadHTML($this->answers_html);
         $xpath = new DOMXPath($dom);
-
+   
         $this->links = array();
         $row_index = -1;
         $name = null;
@@ -361,6 +353,7 @@ class MoodleParser {
         $task_name = $xpath->query('//*[@id="region-main"]/div/h2/text()')->item(0)->nodeValue;
         $course_name = $xpath->query('//*[@id="page-header"]/div/div/h1')->item(0)->nodeValue;
         $this->links[$course_name] = array();
+
         $this->links[$course_name][$task_id] = array();
 
         while ($row_index < 10) { // Конечно увеличить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -513,28 +506,27 @@ class MoodleParser {
         $errors = array();
         $file_ext = strrchr($file_path, '.');
         if ($file_ext == '.rar' || $file_ext == '.zip' || $file_ext == '.tar' || $file_ext == '.gz' || $file_ext == '.bz2' || $file_ext == '.7z' || $file_ext == '.z') {
-            $name = strrchr($file_path, '\\');
+            $name = strrchr($file_path, '/');
             $path = substr($file_path, 0, strlen($file_path) - strlen($name) + 1);
-            exec('"' . $this->path_to_winrar . '" x -o+ "' . $file_path . '" "' . $path . '"', $errors);
+            if($this->linux_client) {
+					$comand = 'unrar x -o+ "' . $file_path . '" "' . $path . '"';
+				}
+				else {
+                    $comand = '"' . $this->path_to_winrar . '" x -o+ "' . $file_path . '" "' . $path . '"';
+            }
+            exec($comand, $errors);
         }
-    }
-
-    /**
-     * Тестирует выполненные работы
-     */
-    public function test_answers() {
-        
     }
 
     /**
      * Скачивает выполненные работы
      */
     public function save_answers() {
-        foreach ($this->links as $course_name => $course) {
+  foreach ($this->links as $course_name => $course) {
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
                     foreach ($student['answers'] as $answer) {
-                        $host = $answer['answer_link'];
+                         $host = $answer['answer_link'];
                         $output_filename = $answer['answer_name'];
                         $ch = curl_init();
                         curl_setopt($ch, CURLOPT_URL, $host);
@@ -548,31 +540,30 @@ class MoodleParser {
 
                         $result = curl_exec($ch);
                         curl_close($ch);
+                         $dir = $this->files_download_to;
 
-                        $dir = $this->files_download_to;
                         if (!is_dir($dir)) {
                             mkdir($dir);
                         }
 
-                        if (!is_dir($dir . '\\' . $course_name)) {
-                            mkdir($dir . '\\' . $course_name);
+                        if (!is_dir($dir . '/' . $course_name)) {
+                            mkdir($dir . '/' . $course_name);
                         }
 
-                        if (!is_dir($dir . '\\' . $course_name . '\\' . $task_name)) {
-                            mkdir($dir . '\\' . $course_name . '\\' . $task_name);
+                        if (!is_dir($dir . '/' . $course_name . '/' . $task_name)) {
+                            mkdir($dir . '/' . $course_name . '/' . $task_name);
                         }
 
-                        if (!is_dir($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name)) {
-                            mkdir($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
+                        if (!is_dir($dir . '/' . $course_name . '/' . $task_name . '/' . $name)) {
+                            mkdir($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
                         }
-
-                        $fp = fopen($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name . '\\' . $output_filename, 'w');
+                        $fp = fopen($dir . '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename, 'w');
                         fwrite($fp, $result);
                         fclose($fp);
-                        $file_path = $dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name . '\\' . $output_filename;
+                        $file_path = $dir .  '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename;
                         $this->unpack_file($file_path);
-                        $isQt = $this->building_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name);
-                        $this->compiling_project($dir . '\\' . $course_name . '\\' . $task_name . '\\' . $name, $isQt);
+                        $isQt = $this->building_project($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
+                            $this->compiling_project($dir . '/' . $course_name . '/' . $task_name . '/' . $name, $isQt);
                     }
                 }
             }
