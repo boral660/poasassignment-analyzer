@@ -76,6 +76,11 @@ class MoodleParser {
      * @var string пароль преподавателя
      */
     private $password = 'qweQwe1$,560';
+	
+	  /**
+     * @var string пароль преподавателя
+     */
+    private $linux_client = false;
 
     public function __construct() {
         $this->init();
@@ -117,7 +122,13 @@ class MoodleParser {
         {
             $cmake_path = $this->create_cmakelist($path);
             if ($cmake_path != NULL) {
-                $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
+				if($this->linux_client) {
+					$comand = "cmake";
+				}
+				else {
+					$comand = '"' . $this->path_to_CMake . '\\cmake.exe"';
+				}
+                $comand .= ' -G "MinGW Makefiles" -B"' . $path . '\\build" -H"' . $path . '\\build"';
                 exec($comand, $errors);
             }
 			return false;
@@ -125,7 +136,13 @@ class MoodleParser {
         else
         {
             foreach ($qtfiles as $qfile) {
-                $comand = '"' . $this->path_to_QMake . '\\qmake.exe" "' . __DIR__ . '\\' . dirname($qfile) . '" 2> qmakelog.txt' ;
+				if($this->linux_client) {
+					$comand = "qmake";
+				}
+				else {
+					$comand = '"' . $this->path_to_QMake . '\\qmake.exe"' ;
+				}
+                $comand .= ' "' . __DIR__ . '\\' . dirname($qfile) . '" 2> qmakelog.txt' ;
                 exec($comand, $errors);
             }
 			return true;
@@ -137,10 +154,23 @@ class MoodleParser {
      */
     public function compiling_project($path, $isQt) {
 		if($isQt){
-			$comand  = '"' . $this->path_to_Make . '\\make.exe" --directory="'. $path . '\\build" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
+			if($this->linux_client) {
+					$comand = "make";
+				}
+				else {
+					$comand = '"' . $this->path_to_Make . '\\make.exe"' ;
+				}
+			$comand  .= ' --directory="'. $path . '\\build" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
 		}
 		else{
-			$comand  = '"' . $this->path_to_Make . '\\make.exe" > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
+				if($this->linux_client) {
+					$comand = "make";
+				}
+				else {
+					$comand = '"' . $this->path_to_Make . '\\make.exe"' ;
+				}
+				
+			$comand  .= ' > "' . $path . '"\\build\\makeLog.txt 2> "' . $path . '"\\build\\makeError.txt';
 		}
             exec($comand, $errors); 
     }
@@ -183,8 +213,6 @@ class MoodleParser {
             }
             # Widgets finds its own dependencies.
             $body .= "add_executable(main \${SOURCE} \${HEADER})\r\n";
-            $body .="SET(MAKE_C_COMPILER C:/MinGW/bin/gcc.exe)\r\n";
-            $body .="SET(MAKE_CXX_COMPILER C:/MinGW/bin/g++.exe)\r\n";
             fwrite($fp, $body);
             fclose($fp);
             return $cmake_path;
@@ -469,6 +497,9 @@ class MoodleParser {
 			
 			if ($ini_array['path_to_Make'] !== null) {
                 $this->path_to_Make = $ini_array['path_to_Make'];
+            }
+			if ($ini_array['linux_client'] !== null) {
+                $this->linux_client = $ini_array['linux_client'];
             }
         }
     }
