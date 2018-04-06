@@ -355,14 +355,13 @@ class MoodleParser {
         curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // таймаут4
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // таймаут
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); // сохранять куки в файл
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
 
         $ex = curl_exec($ch);
         $is_get_course = $this->isGetCourse($this->answers_html = $ex);
-
         curl_close($ch);
 
         return $is_get_course;
@@ -385,14 +384,13 @@ class MoodleParser {
         $dom = new DOMDocument();
         @$dom->loadHTML($this->answers_html);
         $xpath = new DOMXPath($dom);
-   
         $this->links = array();
         $row_index = -1;
         $name = null;
         $task = null;
 
-        $task_name = $xpath->query('//*[@id="region-main"]/div/h2/text()')->item(0)->nodeValue;
-        $course_name = $xpath->query('//*[@id="page-header"]/div/div/h1')->item(0)->nodeValue;
+        $task_name = $xpath->query('//*[@id="region-main"]/div/div/h2/text()')->item(0)->nodeValue;
+        $course_name = $xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue;
         $this->links[$course_name] = array();
 
         $this->links[$course_name][$task_id] = array();
