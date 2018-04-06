@@ -110,31 +110,43 @@ class MoodleParser {
     /**
      * Производит построение проекта используя CMakeLists файл.
      * @param string путь к файлу
-	 * @return данный проект являются ли проектом qt
+	 * @param errors массив ошибок
+	 * @return 0 - собран qt проект, 1 - собран проект без qt, 2 - проект не был собран
      */
-    public function building_project($path) {
+    public function building_project($path, &$errors) {
+		$result = 2;
+		//Удаляем директорию
         if (is_dir($path . '/build')) {
             $this->remove_directory($path . '/build');
         }
         mkdir($path . '/build');
         $qtfiles = $this->recursiveGlob($path, '*.pro');
+		// Если это не qt проект
         if(empty($qtfiles))
         {
+			// Формируем cmake лист
             $cmake_path = $this->create_cmakelist($path);
             if ($cmake_path != NULL) {
+				// Составляем команду
 				if($this->linux_client) {
 					$comand = 'cmake  -G "Unix Makefiles"';
 				}
 				else {
 					$comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles"';
 				}
-                $comand .= ' -B"' . $path . '/build" -H"' . $path . '/build"';
-                exec($comand, $errors);
+                $comand .= ' -B"' . $path . '/build" -H"' . $path . '/build"' . ' 2> cmakeError.txt';
+                exec($comand, $error);
+				$result = 1;
+		
+			// Выводим ошибки
+			$header = "Error during build on cmake: ";
+			$this->error_on_file("./cmakeError.txt",$header,$errors);
             }
-			return false;
+			
         }
         else
         {
+			// Составляем команду
             foreach ($qtfiles as $qfile) {
 				if($this->linux_client) {
 					$comand = "qmake";
@@ -142,31 +154,60 @@ class MoodleParser {
 				else {
 					$comand = '"' . $this->path_to_QMake . '\\qmake.exe"' ;
 				}
-                $comand .= ' "' . __DIR__ . '/' . dirname($qfile) . '" 2> qmakelog.txt' ;
-                exec($comand, $errors);
+                $comand .= ' "' . __DIR__ . '/' . dirname($qfile) . '" 2> qmakeError.txt' ;
+                exec($comand, $error);
             }
-			return true;
+			$result = 0;
+			// Выводим ошибки
+			$header = "Error during build on qmake: ";
+			$this->error_on_file("./qmakeError.txt",$header,$errors);
         }
+	
+
+			return $result;
     }
       /**
      * Производит компиляцию проекта используя MakeFile
      * @param string путь к файлу
+	 * @param int  0 - проект qt, 1 - проект без qt
+	 * @param string[] массив ошибок
      */
-    public function compiling_project($path, $isQt) {
+    public function compiling_project($path, $qt, &$errors) {
+		// Составляем команду для компиляции
 				if($this->linux_client) {
 					$comand = "make";
 				}
 				else {
 					$comand = '"' . $this->path_to_Make . '\\make.exe"' ;
 				}
-            		if($isQt){
+				// Если файл не qt указываем откуда брать файлы
+            	if($qt == 1){
                        $comand .= ' --directory="'. $path . '/build"';
-}
+				}
 				
-			$comand  .= ' > "' . $path . '"/build/makeLog.txt 2> "' . $path . '"/build/makeError.txt';
-
-            exec($comand, $errors); 
+			$comand  .= ' > makeLog.txt 2> makeError.txt';
+            exec($comand, $error);
+			// Вывести сообщение об ошибке
+			$header = "Error during compilation with make: ";
+			$this->error_on_file("./makeError.txt",$header,$errors);
+	
     }
+	    /**
+     * Позволяет выводить на экран сообщения об ошибке из файла
+     * @param string путь к файлу
+	 * @param string заголовок ошибки
+	 * @param string массив ошибок
+     */
+    public function error_on_file($path, $header_string, &$errors) {
+					$lines = file($path);
+			 if(!empty($lines)){
+						array_push($errors,$header_string);
+			 }
+		foreach($lines as $line){
+				$line = iconv('CP866', 'UTF-8', $line);
+				array_push($errors,$line);
+			}
+	}
 
     /**
      * Создаёт файл для построенния проекта
@@ -500,8 +541,9 @@ class MoodleParser {
     /**
      * Распаковывает один файл
      * @param $file_path путь к файлу для распаковки
+	 * @param sting[] массив ошибок
      */
-    public function unpack_file($file_path) {
+    public function unpack_file($file_path, &$errors) {
 
         $errors = array();
         $file_ext = strrchr($file_path, '.');
@@ -512,12 +554,14 @@ class MoodleParser {
 					$comand = 'unrar x -o+ "' . $file_path . '" "' . $path . '"';
 				}
 				else {
-                    $comand = '"' . $this->path_to_winrar . '" x -o+ "' . $file_path . '" "' . $path . '"';
+                    $comand = '"' . $this->path_to_winrar . '" x -o+ "' . $file_path . '" "' . $path . '" 2> rarError.txt';
             }
-            exec($comand, $errors);
+            exec($comand, $error);
+			$header = "Error during unpacking file: ";
+			$this->error_on_file("./rarError.txt",$header,$errors);
         }
     }
-
+	
     /**
      * Скачивает выполненные работы
      */
@@ -560,11 +604,19 @@ class MoodleParser {
                         $fp = fopen($dir . '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename, 'w');
                         fwrite($fp, $result);
                         fclose($fp);
-                        $file_path = $dir .  '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename;
-                        $this->unpack_file($file_path);
-                        $isQt = $this->building_project($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
-                            $this->compiling_project($dir . '/' . $course_name . '/' . $task_name . '/' . $name, $isQt);
-                    }
+						$errors = array();
+                        $file_path = $dir .  '/' . $course_name . '/' . $task_name . '/' . $name ;
+                        $this->unpack_file($file_path . '/' . $output_filename,$errors);
+                        $result = $this->building_project($file_path,$errors);
+						if($result!=2){
+							$this->compiling_project($file_path, $result,$errors);}
+						}
+
+						foreach($errors as $error){
+							echo($error . "<br>");
+						}
+						echo("<br>");
+						
                 }
             }
         }
