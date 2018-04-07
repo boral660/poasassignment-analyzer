@@ -84,6 +84,16 @@ class MoodleParser
     private $linux_client = false;
 	
 	/**
+     * @var string следует ли распаковывать файлы
+     */
+    private $unpack_answers = false;
+	
+	/**
+     * @var string следует ли тестировать 
+     */
+    private $build_and_compil = false;
+	
+	/**
      * @var string сохранить ли ответы студентов
      */
     private $save_answers = false;
@@ -575,6 +585,12 @@ class MoodleParser
 			if ($ini_array['save_answers'] !== null) {
                 $this->save_answers = $ini_array['save_answers'];
             }
+			if ($ini_array['unpack_answers'] !== null) {
+                $this->unpack_answers = $ini_array['unpack_answers'];
+            }
+			if ($ini_array['build_and_compil'] !== null) {
+                $this->build_and_compil = $ini_array['build_and_compil'];
+            }
         }
     }
     
@@ -649,17 +665,21 @@ class MoodleParser
                         fclose($fp);
                         $errors    = array();
                         $file_path = $dir . '/' . $course_name . '/' . $task_name . '/' . $name;
-                        $this->unpack_file($file_path . '/' . $output_filename, $errors);
-                        $result = $this->building_project($file_path, $errors);
-                        if ($result != 2) {
-                            $this->compiling_project($file_path, $result, $errors);
-                        }
+						if($this->unpack_answers)
+							$this->unpack_file($file_path . '/' . $output_filename, $errors);
+						
+						if($this->build_and_compil){
+							$result = $this->building_project($file_path, $errors);
+							if ($result != 2) {
+								$this->compiling_project($file_path, $result, $errors);
+							}
+						}
 						if(empty($errors))
 						echo "Testing success";
 					
-                    foreach ($errors as $error) {
-                        echo ($error . "<br>");
-                    }
+						foreach ($errors as $error) {
+							echo ($error . "<br>");
+						}
                     }
                
                     echo ("<br>");
