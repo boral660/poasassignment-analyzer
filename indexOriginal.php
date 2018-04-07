@@ -79,9 +79,14 @@ class MoodleParser
     private $password = 'qweQwe1$,560';
     
     /**
-     * @var string пароль преподавателя
+     * @var string запуск на linux системах
      */
     private $linux_client = false;
+	
+	/**
+     * @var string сохранить ли ответы студентов
+     */
+    private $save_answers = false;
     
     public function __construct()
     {
@@ -104,12 +109,25 @@ class MoodleParser
      */
     public function remove_directory($dir)
     {
-        if ($objs = glob($dir . "/*")) {
-            foreach ($objs as $obj) {
-                is_dir($obj) ? $this->remove_directory($obj) : unlink($obj);
-            }
+		if(is_dir($dir)){
+			if ($objs = glob($dir . "/*")) {
+				foreach ($objs as $obj) {
+					is_dir($obj) ? $this->remove_directory($obj) : unlink($obj);
+				}
+			}
+			rmdir($dir);
+		}
+    }
+	
+	/**
+     * Удаление файла
+     * @param $file путь к файлу
+     */
+    public function remove_file($file)
+    {
+        if (file_exists($file)) {
+           unlink($file);
         }
-        rmdir($dir);
     }
     /**
      * Производит построение проекта используя CMakeLists файл.
@@ -289,21 +307,23 @@ class MoodleParser
             $found = array_merge($found, $this->recursiveGlob($dir, $fileMask));
         return $found;
     }
-    
-    /**
-     * Рекурсивный проход по каталогу с вызовом $callback на каждом файле
-     * @param string - путь к папке, в которой должен осуществлятся поиск
-     * @param string - маска, по которой осуществляется поиск
-     * @return $callback - найденный файл
+	
+     /**
+     * Очистить от ненужных файлов папку со скриптом
+	 * @param string - маска, по которой осуществляется поиск
      */
-    function globWalk($startDir, $fileMask, $callback)
-    {
-        $found = glob($startDir . DIRECTORY_SEPARATOR . $fileMask);
-        foreach ($found as $path)
-            $callback($path);
-        $dirs = glob($startDir . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
-        foreach ($dirs as $dir)
-            $this->globWalk($dir, $fileMask, $callback);
+    function clear_dir($path){
+		$this->remove_directory($path . '/build');
+		$this->remove_directory('./debug');
+		$this->remove_directory('./release');
+		$this->remove_file('./cmakeError.txt');
+		$this->remove_file('./makeError.txt');
+		$this->remove_file('./makeLog.txt');
+		$this->remove_file('./rarError.txt');
+		$this->remove_file('./qmakeError.txt');
+		$this->remove_file('./Makefile');
+		$this->remove_file('./Makefile.Debug');
+		$this->remove_file('./Makefile.Release');
     }
     
     /**
@@ -346,7 +366,8 @@ class MoodleParser
             if ($is_get_course === true) {
                 $this->parse($task_id);
                 $this->save_answers();
-                
+              if(!$this->save_answers)
+				$this->remove_directory('./' . $this->files_download_to);
                 //  $this->send_mail();
             }
         }
@@ -375,7 +396,12 @@ class MoodleParser
         
         return $is_get_course;
     }
-    
+     
+    /**
+     * Выполняет перевод в траслит
+     * @param $str строка которую необходимо перевести
+	  * @param $onEng true - перевод с английского, false - перевод с русского
+     */
  function translit($str, $onEng) 
  {
         $rus = array('А', 'Б', 'В', 'Г', 'Д', 'Е', 'Ё', 'Ж', 'З', 'И', 'Й', 'К', 'Л', 'М', 'Н', 'О', 'П', 'Р', 'С', 'Т', 'У', 'Ф', 'Х', 'Ц', 'Ч', 'Ш', 'Щ', 'Ъ', 'Ы', 'Ь', 'Э', 'Ю', 'Я', 'а', 'б', 'в', 'г', 'д', 'е', 'ё', 'ж', 'з', 'и', 'й', 'к', 'л', 'м', 'н', 'о', 'п', 'р', 'с', 'т', 'у', 'ф', 'х', 'ц', 'ч', 'ш', 'щ', 'ъ', 'ы', 'ь', 'э', 'ю', 'я');
@@ -545,6 +571,9 @@ class MoodleParser
             if ($ini_array['linux_client'] !== null) {
                 $this->linux_client = $ini_array['linux_client'];
             }
+			if ($ini_array['save_answers'] !== null) {
+                $this->save_answers = $ini_array['save_answers'];
+            }
         }
     }
     
@@ -628,6 +657,7 @@ class MoodleParser
                         echo ($error . "<br>");
                     }
                     echo ("<br>");
+					$this->clear_dir($file_path);
                     
                 }
             }
