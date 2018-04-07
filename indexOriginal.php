@@ -370,6 +370,7 @@ class MoodleParser
 				$this->remove_directory('./' . $this->files_download_to);
                 //  $this->send_mail();
             }
+				 echo "<br><br>";
         }
     }
     
@@ -609,7 +610,9 @@ class MoodleParser
         foreach ($this->links as $course_name => $course) {
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
+					 echo "<h3>Тестирование работы студента " . $name . ":</h3>";
                     foreach ($student['answers'] as $answer) {
+						echo "<h4>  Тестирование файла " . $answer['answer_name'] . ":</h4>";
                         $host            = $answer['answer_link'];
                         $output_filename = $answer['answer_name'];
                         $ch              = curl_init();
@@ -651,11 +654,14 @@ class MoodleParser
                         if ($result != 2) {
                             $this->compiling_project($file_path, $result, $errors);
                         }
-                    }
-                    
+						if(empty($errors))
+						echo "Testing success";
+					
                     foreach ($errors as $error) {
                         echo ($error . "<br>");
                     }
+                    }
+               
                     echo ("<br>");
 					$this->clear_dir($file_path);
                     
