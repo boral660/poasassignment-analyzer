@@ -25,7 +25,7 @@ unpack_answers = true
 path_to_winrar - путь к установленному распаковщику для распаковки архивов
 
 Если требуется протестировать скаченные работы следует указать опцию
-build_and_compil = true
+build_and_compile = true
 
 Так же необходимо указать путь к cmake, qmake, make
 path_to_CMake 

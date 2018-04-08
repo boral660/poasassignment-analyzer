@@ -78,7 +78,7 @@ class MoodleParser
     /**
      * @var string следует ли тестировать
      */
-    private $build_and_compil = false;
+    private $build_and_compile = false;
 
     /**
      * @var string сохранить ли ответы студентов
@@ -339,8 +339,8 @@ class MoodleParser
             if ($ini_array['unpack_answers'] !== null) {
                 $this->unpack_answers = $ini_array['unpack_answers'];
             }
-            if ($ini_array['build_and_compil'] !== null) {
-                $this->build_and_compil = $ini_array['build_and_compil'];
+            if ($ini_array['build_and_compile'] !== null) {
+                $this->build_and_compile = $ini_array['build_and_compile'];
             }
         }
     }
@@ -420,7 +420,7 @@ class MoodleParser
                             $this->unpackFile($file_path . '/' . $output_filename, $errors);
                         }
 						
-                        if ($this->build_and_compil) {
+                        if ($this->build_and_compile) {
                          Tester::testOnPath($file_path,$errors);
                         }
                     }
