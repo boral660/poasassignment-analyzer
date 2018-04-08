@@ -1,4 +1,7 @@
 <?php
+
+include 'Cleaner.php';
+
 /**
  * Class MoodleParser Выполняет парсинг страницы с ответами на мудл
  */
@@ -110,32 +113,6 @@ class MoodleParser
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
 
-    /**
-     * Удаление папки со всем содержимым
-     * @param $dir путь к папке
-     */
-    public function removeDirectory($dir)
-    {
-        if (is_dir($dir)) {
-            if ($objs = glob($dir . "/*")) {
-                foreach ($objs as $obj) {
-                    is_dir($obj) ? $this->removeDirectory($obj) : unlink($obj);
-                }
-            }
-            rmdir($dir);
-        }
-    }
-
-    /**
-     * Удаление файла
-     * @param $file путь к файлу
-     */
-    public function removeFile($file)
-    {
-        if (file_exists($file)) {
-            unlink($file);
-        }
-    }
     /**
      * Производит построение проекта используя CMakeLists файл.
      * @param string путь к файлу
@@ -312,25 +289,6 @@ class MoodleParser
             $found = array_merge($found, $this->recursiveGlob($dir, $fileMask));
         }
         return $found;
-    }
-
-    /**
-     * Очистить от ненужных файлов папку со скриптом
-     * @param string - маска, по которой осуществляется поиск
-     */
-    public function clearDir($path)
-    {
-        $this->removeDirectory($path . '/build');
-        $this->removeDirectory('./debug');
-        $this->removeDirectory('./release');
-        $this->removeFile('./cmakeError.txt');
-        $this->removeFile('./makeError.txt');
-        $this->removeFile('./makeLog.txt');
-        $this->removeFile('./rarError.txt');
-        $this->removeFile('./qmakeError.txt');
-        $this->removeFile('./Makefile');
-        $this->removeFile('./Makefile.Debug');
-        $this->removeFile('./Makefile.Release');
     }
 
     /**
@@ -620,7 +578,7 @@ class MoodleParser
                         }
 
                         if (is_dir($dir . '/' . $course_name . '/' . $task_name . '/' . $name)) {
-                            $this->removeDirectory($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
+                            Cleaner::removeDirectory($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
                         }
 						mkdir($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
                         $fp = fopen($dir . '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename, 'w');
@@ -648,7 +606,7 @@ class MoodleParser
                     }
 
                     echo("<br>");
-                    $this->clearDir($file_path);
+                    Cleaner::clearDir($file_path);
                 }
             }
         }
@@ -664,3 +622,4 @@ echo '<br>';
 if ($is_auth === true) {
     $mp->parseAllTask();
 }
+
