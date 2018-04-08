@@ -1,6 +1,7 @@
 <?php
 
-include 'Cleaner.php';
+include_once 'Cleaner.php';
+include_once  'Tester.php';
 
 /**
  * Class MoodleParser Выполняет парсинг страницы с ответами на мудл
@@ -33,20 +34,6 @@ class MoodleParser
      */
     private $task_url = '';
 
-    /**
-     * @var string путь к cMake
-     */
-    private $path_to_CMake = '';
-
-    /**
-     * @var string путь к qMake
-     */
-    private $path_to_QMake = '';
-
-    /**
-     * @var string путь к Make
-     */
-    private $path_to_Make = '';
 
     /**
      * @var array номера заданий, которые необходимо проверить
@@ -78,11 +65,11 @@ class MoodleParser
      */
     private $password = 'qweQwe1$,560';
 
-    /**
+	/**
      * @var string запуск на linux системах
      */
-    private $linux_client = false;
-
+    private  $linux_client = false;
+	
     /**
      * @var string следует ли распаковывать файлы
      */
@@ -113,148 +100,6 @@ class MoodleParser
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
 
-    /**
-     * Производит построение проекта используя CMakeLists файл.
-     * @param string путь к файлу
-     * @param errors массив ошибок
-     * @return 0 - собран qt проект, 1 - собран проект без qt, 2 - проект не был собран
-     */
-    public function buildProject($path, &$errors)
-    {
-        $result = 2;
-        //Удаляем директорию
-        if (is_dir($path . '/build')) {
-            $this->removeDirectory($path . '/build');
-        }
-        mkdir($path . '/build');
-        $qtfiles = $this->recursiveGlob($path, '*.pro');
-        // Если это не qt проект
-        if (empty($qtfiles)) {
-            // Формируем cmake лист
-            $cmake_path = $this->createCmakelist($path);
-            if ($cmake_path != null) {
-                // Составляем команду
-                if ($this->linux_client) {
-                    $comand = 'cmake  -G "Unix Makefiles"';
-                } else {
-                    $comand = '"' . $this->path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles"';
-                }
-                $comand .= ' -B"' . $path . '/build" -H"' . $path . '/build"' . ' 2> cmakeError.txt';
-                exec($comand, $error);
-                $result = 1;
-
-                // Выводим ошибки
-                $header = "Error during build on cmake: ";
-                $this->readErrorOnFile("./cmakeError.txt", $header, $errors);
-            }
-        } else {
-            // Составляем команду
-            foreach ($qtfiles as $qfile) {
-                if ($this->linux_client) {
-                    $comand = "qmake";
-                } else {
-                    $comand = '"' . $this->path_to_QMake . '\\qmake.exe"';
-                }
-                $comand .= ' "' . __DIR__ . '/' . dirname($qfile) . '" 2> qmakeError.txt';
-                exec($comand, $error);
-            }
-            $result = 0;
-            // Выводим ошибки
-            $header = "Error during build on qmake: ";
-            $this->readErrorOnFile("./qmakeError.txt", $header, $errors);
-        }
-
-
-        return $result;
-    }
-    /**
-     * Производит компиляцию проекта используя MakeFile
-     * @param string путь к файлу
-     * @param int  0 - проект qt, 1 - проект без qt
-     * @param string[] массив ошибок
-     */
-    public function compileProject($path, $qt, &$errors)
-    {
-        // Составляем команду для компиляции
-        if ($this->linux_client) {
-            $comand = "make";
-        } else {
-            $comand = '"' . $this->path_to_Make . '\\make.exe"';
-        }
-        // Если файл не qt указываем откуда брать файлы
-        if ($qt == 1) {
-            $comand .= ' --directory="' . $path . '/build"';
-        }
-
-        $comand .= ' > makeLog.txt 2> makeError.txt';
-        exec($comand, $error);
-        // Вывести сообщение об ошибке
-        $header = "Error during compilation with make: ";
-        $this->readErrorOnFile("./makeError.txt", $header, $errors);
-    }
-    /**
-     * Позволяет выводить на экран сообщения об ошибке из файла
-     * @param string путь к файлу
-     * @param string заголовок ошибки
-     * @param string массив ошибок
-     */
-    public function readErrorOnFile($path, $header_string, &$errors)
-    {
-        $lines = file($path);
-        if (!empty($lines)) {
-            array_push($errors, $header_string);
-        }
-        foreach ($lines as $line) {
-            $line = iconv('CP866', 'UTF-8', $line);
-            array_push($errors, $line);
-        }
-    }
-
-    /**
-     * Создаёт файл для построенния проекта
-     * @param string путь к файлам проекта
-     */
-    public function createCmakelist($path)
-    {
-        $cmake_path   = $path . "/build/CMakeLists.txt";
-        $source_files = $this->recursiveGlob($path, '*.cpp');
-        if (!empty($source_files)) {
-            $header_files = $this->recursiveGlob($path, '*.h');
-            // Создание файла
-            $fp           = fopen($cmake_path, 'w');
-            // Наполнение файла
-            $body         = "";
-            // Установление минимальной версии cmake
-            $body .= "cmake_minimum_required(VERSION 2.8)\r\n";
-            // Установление файлов с кодом
-            $body .= "set(SOURCE";
-            foreach ($source_files as $sfile) {
-                $body .= " ";
-                $res = substr($sfile, strlen($path) + 1);
-                $res = str_replace('\\', '/', $res);
-                $body .= '../' . $res;
-            }
-            $body .= ")\r\n";
-
-            if (!empty($header_files)) {
-                // Заголовочные файлы
-                $body .= "set(HEADER";
-                foreach ($header_files as $hfile) {
-                    $body .= " ";
-                    $res = substr($hfile, strlen($path) + 1);
-                    $res = str_replace('\\', '/', $res);
-                    $body .= '../' . $res;
-                }
-                $body .= ")\r\n";
-            }
-            # Widgets finds its own dependencies.
-            $body .= "add_executable(main \${SOURCE} \${HEADER})\r\n";
-            fwrite($fp, $body);
-            fclose($fp);
-            return $cmake_path;
-        }
-        return null;
-    }
 
     /**
      * Определяет, удалось ли получить страницу с заданиями
@@ -273,22 +118,6 @@ class MoodleParser
     public function getAnswersHtml()
     {
         return $this->answers_html;
-    }
-
-    /**
-     * Рекурсивный проход по каталогу
-     * @param string - путь к папке, в которой должен осуществлятся поиск
-     * @param string - маска, по которой осуществляется поиск
-     * @return array - полный список найденных файлов
-     */
-    public function recursiveGlob($startDir, $fileMask)
-    {
-        $found = glob($startDir . DIRECTORY_SEPARATOR . $fileMask);
-        $dirs  = glob($startDir . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
-        foreach ($dirs as $dir) {
-            $found = array_merge($found, $this->recursiveGlob($dir, $fileMask));
-        }
-        return $found;
     }
 
     /**
@@ -490,18 +319,19 @@ class MoodleParser
             }
 
             if ($ini_array['path_to_CMake'] !== null) {
-                $this->path_to_CMake = $ini_array['path_to_CMake'];
+                Tester::setCMakePath($ini_array['path_to_CMake']);
             }
 
             if ($ini_array['path_to_QMake'] !== null) {
-                $this->path_to_QMake = $ini_array['path_to_QMake'];
+                Tester::setQMakePath($ini_array['path_to_QMake']);
             }
 
             if ($ini_array['path_to_Make'] !== null) {
-                $this->path_to_Make = $ini_array['path_to_Make'];
+               Tester::setMakePath($ini_array['path_to_Make']);
             }
             if ($ini_array['linux_client'] !== null) {
-                $this->linux_client = $ini_array['linux_client'];
+                Tester::setLinuxClient ($ini_array['linux_client']);
+				$this->linux_client = $ini_array['linux_client'];
             }
             if ($ini_array['save_answers'] !== null) {
                 $this->save_answers = $ini_array['save_answers'];
@@ -534,7 +364,7 @@ class MoodleParser
             }
             exec($comand, $error);
             $header = "Error during unpacking file: ";
-            $this->readErrorOnFile("./rarError.txt", $header, $errors);
+            Tester::readErrorOnFile("./rarError.txt", $header, $errors);
         }
     }
 
@@ -589,19 +419,9 @@ class MoodleParser
                         if ($this->unpack_answers) {
                             $this->unpackFile($file_path . '/' . $output_filename, $errors);
                         }
-
+						
                         if ($this->build_and_compil) {
-                            $result = $this->buildProject($file_path, $errors);
-                            if ($result != 2) {
-                                $this->compileProject($file_path, $result, $errors);
-                            }
-                        }
-                        if (empty($errors)) {
-                            echo "Testing success";
-                        }
-
-                        foreach ($errors as $error) {
-                            echo($error . "<br>");
+                         Tester::testOnPath($file_path,$errors);
                         }
                     }
 
