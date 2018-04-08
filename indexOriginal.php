@@ -372,7 +372,7 @@ class MoodleParser
             if ($is_get_course === true) {
                 $this->parse($task_id);
                 $this->testAnswers();
-                if (!$this->testAnswers) {
+                if (!$this->save_answers) {
                     $this->removeDirectory('./' . $this->files_download_to);
                 }
                 //  $this->sendMail();
@@ -619,9 +619,10 @@ class MoodleParser
                             mkdir($dir . '/' . $course_name . '/' . $task_name);
                         }
 
-                        if (!is_dir($dir . '/' . $course_name . '/' . $task_name . '/' . $name)) {
-                            mkdir($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
+                        if (is_dir($dir . '/' . $course_name . '/' . $task_name . '/' . $name)) {
+                            $this->removeDirectory($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
                         }
+						mkdir($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
                         $fp = fopen($dir . '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename, 'w');
                         fwrite($fp, $result);
                         fclose($fp);
