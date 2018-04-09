@@ -2,6 +2,7 @@
 
 include_once 'Cleaner.php';
 include_once  'Tester.php';
+include_once  'Reporter.php';
 
 /**
  * Class MoodleParser Выполняет парсинг страницы с ответами на мудл
@@ -18,6 +19,11 @@ class MoodleParser
      * @var array список курсов, заданий и студентов с ответами для проверки
      */
     private $links = array();
+	
+	 /**
+     * @var array следует ли отослать результат проверки на email
+     */
+    private $send_result_on_email = false;
 
     /**
      * @var string путь к winRar
@@ -53,17 +59,17 @@ class MoodleParser
     /**
      * @var string логин преподавателя
      */
-    private $username = 'borzih.a';
+    private $username = '';
 
     /**
      * @var string почта преподавателя, на которую придет письмо со списком студентов
      */
-    private $email = 'boral660@gmail.com';
+    private $email = '';
 
     /**
      * @var string пароль преподавателя
      */
-    private $password = 'qweQwe1$,560';
+    private $password = '';
 
 	/**
      * @var string запуск на linux системах
@@ -99,8 +105,22 @@ class MoodleParser
     {
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
+	
+	/**
+     * Позволяет получить email указанный в файле
+     */
+    public function getEmail()
+    {
+        return $this->email;
+    }
 
-
+	/**
+     * Следует ли отправлять результат тестирования
+     */
+    public function getSendResultOnEmail()
+    {
+        return $this->send_result_on_email;
+    }
     /**
      * Определяет, удалось ли получить страницу с заданиями
      * @param $data HTML страницы с ответами
@@ -342,6 +362,9 @@ class MoodleParser
             if ($ini_array['build_and_compile'] !== null) {
                 $this->build_and_compile = $ini_array['build_and_compile'];
             }
+			if ($ini_array['send_result_on_email'] !== null) {
+                $this->send_result_on_email = $ini_array['send_result_on_email'];
+            }
         }
     }
 
@@ -434,12 +457,19 @@ class MoodleParser
 }
 
 $mp = new MoodleParser();
-
+ob_start();
 $is_auth = $mp->login();
 echo $is_auth ? 'Login success' : 'Login failed';
 echo '<br>';
-
-if ($is_auth === true) {
+$my_html ='';
+if ($is_auth === true) {	
     $mp->parseAllTask();
 }
+$my_html = ob_get_clean();
+if($mp->getSendResultOnEmail()){
+	Reporter::sendMail($my_html,$mp->getEmail());
+}
+echo $my_html;
+
+
 
