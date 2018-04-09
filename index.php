@@ -248,7 +248,7 @@ class MoodleParser
 
         $this->links[$course_name][$task_id] = array();
 
-        while ($row_index < 10) { // Конечно увеличить !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        while ($row_index < 200) { 
             $row_index++;
             $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
             if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1 || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
