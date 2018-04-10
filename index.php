@@ -180,7 +180,7 @@ class MoodleParser
                 $this->parse($task_id);
                 $this->testAnswers();
                 if (!$this->save_answers) {
-                    $this->removeDirectory('./' . $this->files_download_to);
+                    Cleaner::removeDirectory('./' . $this->files_download_to);
                 }
                 //  $this->sendMail();
             }
@@ -289,14 +289,6 @@ class MoodleParser
     }
 
     /**
-     * Выполняет отправку на почту письма со списком студентов, работы которых нужно проверить
-     */
-    public function sendMail()
-    {
-        // Не реализованна
-    }
-
-    /**
      * Инициализирует данными из конфигурационного файла
      */
     public function init()
@@ -399,9 +391,8 @@ class MoodleParser
         foreach ($this->links as $course_name => $course) {
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
-                    echo "<h3>Тестирование работы студента " . $name . ":</h3>";
+                    echo "<h3>Тестирование работы по задаче <<" . $task_name . ">> студента " . $name . ":</h3>";
                     foreach ($student['answers'] as $answer) {
-                        echo "<h4>  Тестирование файла " . $answer['answer_name'] . ":</h4>";
                         $host            = $answer['answer_link'];
                         $output_filename = $answer['answer_name'];
                         $ch              = curl_init();
@@ -442,12 +433,10 @@ class MoodleParser
                         if ($this->unpack_answers) {
                             $this->unpackFile($file_path . '/' . $output_filename, $errors);
                         }
-						
-                        if ($this->build_and_compile) {
-                         Tester::testOnPath($file_path,$errors);
-                        }
                     }
-
+                    if ($this->build_and_compile) {
+                         Tester::testOnPath($file_path,$errors);
+                    }
                     echo("<br>");
                     Cleaner::clearDir($file_path);
                 }
