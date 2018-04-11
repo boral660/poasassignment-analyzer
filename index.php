@@ -242,12 +242,13 @@ class MoodleParser
         $name        = null;
         $task        = null;
 
-        $task_name                 = $xpath->query('//*[@id="region-main"]/div/div/h2/text()')->item(0)->nodeValue;
+        $task_name                 = $xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue;
         $course_name               = $xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue;
         $this->links[$course_name] = array();
 
         $this->links[$course_name][$task_id] = array();
-
+		$pos=strripos($this->task_url,"/");
+		$moodle_url=substr($this->task_url,0,$pos+1);
         while ($row_index < 200) { 
             $row_index++;
             $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
@@ -256,7 +257,7 @@ class MoodleParser
                 $student_name                                                  = $this->translit($name->nodeValue, true);
                 $this->links[$course_name][$task_id][$student_name]            = array();
                 $this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
-
+				$this->links[$course_name][$task_id][$student_name]['grade']   = $moodle_url . $task->getAttribute('href'); 
                 $this->links[$course_name][$task_id][$student_name]['answers'] = array();
                 $task_index                                                    = 0;
                 while (true) {
@@ -391,8 +392,10 @@ class MoodleParser
         foreach ($this->links as $course_name => $course) {
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
-                    echo "<h3>Тестирование работы по задаче <<" . $task_name . ">> студента " . $name . ":</h3>";
-                    foreach ($student['answers'] as $answer) {
+				    if ($this->build_and_compile) {
+						echo "<h3>Тестирование работы по задаче <<" . $task_name . ">> студента " . $name . ":</h3>";
+                    }
+					foreach ($student['answers'] as $answer) {
                         $host            = $answer['answer_link'];
                         $output_filename = $answer['answer_name'];
                         $ch              = curl_init();
