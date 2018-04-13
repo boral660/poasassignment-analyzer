@@ -457,6 +457,7 @@ if ($is_auth === true) {
     $mp->parseAllTask();
 }
 $my_html = ob_get_clean();
+Reporter::writeOnFile($my_html);
 if ($mp->getSendResultOnEmail()) {
     Reporter::sendMail($my_html, $mp->getEmail());
 }
