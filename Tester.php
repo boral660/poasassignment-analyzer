@@ -216,8 +216,10 @@ class Tester
         if (!empty($lines)) {
             array_push($errors, $header_string);
         }
-        foreach ($lines as $line) {
-            $line = iconv('CP866', 'UTF-8', $line);
+        foreach ($lines as $line) {	
+		if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+            $line = iconv('WINDOWS-1251', 'UTF-8', $line);
+		}
             array_push($errors, $line);
         }
     }

@@ -1,5 +1,4 @@
 <?php
-
 include_once 'Cleaner.php';
 include_once  'Tester.php';
 include_once  'Reporter.php';
@@ -19,8 +18,8 @@ class MoodleParser
      * @var array список курсов, заданий и студентов с ответами для проверки
      */
     private $links = array();
-	
-	 /**
+
+    /**
      * @var array следует ли отослать результат проверки на email
      */
     private $send_result_on_email = false;
@@ -71,11 +70,11 @@ class MoodleParser
      */
     private $password = '';
 
-	/**
+    /**
      * @var string запуск на linux системах
      */
-    private  $linux_client = false;
-	
+    private $linux_client = false;
+
     /**
      * @var string следует ли распаковывать файлы
      */
@@ -105,8 +104,8 @@ class MoodleParser
     {
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
-	
-	/**
+
+    /**
      * Позволяет получить email указанный в файле
      */
     public function getEmail()
@@ -114,7 +113,7 @@ class MoodleParser
         return $this->email;
     }
 
-	/**
+    /**
      * Следует ли отправлять результат тестирования
      */
     public function getSendResultOnEmail()
@@ -242,14 +241,15 @@ class MoodleParser
         $name        = null;
         $task        = null;
 
-        $task_name                 = $xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue;
-        $course_name               = $xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue;
+        $task_name                 = $this->translit($xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue, true);
+        $course_name               = $this->translit($xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue, true);
+
         $this->links[$course_name] = array();
 
         $this->links[$course_name][$task_id] = array();
-		$pos=strripos($this->task_url,"/");
-		$moodle_url=substr($this->task_url,0,$pos+1);
-        while ($row_index < 200) { 
+        $pos=strripos($this->task_url, "/");
+        $moodle_url=substr($this->task_url, 0, $pos+1);
+        while ($row_index < 200) {
             $row_index++;
             $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
             if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1 || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
@@ -257,13 +257,13 @@ class MoodleParser
                 $student_name                                                  = $this->translit($name->nodeValue, true);
                 $this->links[$course_name][$task_id][$student_name]            = array();
                 $this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
-				$this->links[$course_name][$task_id][$student_name]['grade']   = $moodle_url . $task->getAttribute('href'); 
+                $this->links[$course_name][$task_id][$student_name]['grade']   = $moodle_url . $task->getAttribute('href');
                 $this->links[$course_name][$task_id][$student_name]['answers'] = array();
                 $task_index                                                    = 0;
                 while (true) {
                     if ($xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//@href')->item($task_index) !== null) {
                         $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_link'] = $xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//@href')->item($task_index)->nodeValue; // ссылка на ответ
-                        $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_name'] = $xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//text()')->item($task_index * 2)->nodeValue; // наименование ответа
+                        $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_name'] = $this->translit($xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//text()')->item($task_index * 2)->nodeValue, true); // наименование ответа
                         $task_index++;
                     } else {
                         break;
@@ -340,11 +340,11 @@ class MoodleParser
             }
 
             if ($ini_array['path_to_Make'] !== null) {
-               Tester::setMakePath($ini_array['path_to_Make']);
+                Tester::setMakePath($ini_array['path_to_Make']);
             }
             if ($ini_array['linux_client'] !== null) {
-                Tester::setLinuxClient ($ini_array['linux_client']);
-				$this->linux_client = $ini_array['linux_client'];
+                Tester::setLinuxClient($ini_array['linux_client']);
+                $this->linux_client = $ini_array['linux_client'];
             }
             if ($ini_array['save_answers'] !== null) {
                 $this->save_answers = $ini_array['save_answers'];
@@ -355,7 +355,7 @@ class MoodleParser
             if ($ini_array['build_and_compile'] !== null) {
                 $this->build_and_compile = $ini_array['build_and_compile'];
             }
-			if ($ini_array['send_result_on_email'] !== null) {
+            if ($ini_array['send_result_on_email'] !== null) {
                 $this->send_result_on_email = $ini_array['send_result_on_email'];
             }
         }
@@ -392,10 +392,10 @@ class MoodleParser
         foreach ($this->links as $course_name => $course) {
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
-				    if ($this->build_and_compile) {
-						echo "<h3>Тестирование работы по задаче <<" . $task_name . ">> студента " . $name . ":</h3>";
+                    if ($this->build_and_compile) {
+                        echo "<h3>Тестирование работы по задаче <<" . $task_name . ">> студента " . $name . ":</h3>";
                     }
-					foreach ($student['answers'] as $answer) {
+                    foreach ($student['answers'] as $answer) {
                         $host            = $answer['answer_link'];
                         $output_filename = $answer['answer_name'];
                         $ch              = curl_init();
@@ -424,10 +424,9 @@ class MoodleParser
                             mkdir($dir . '/' . $course_name . '/' . $task_name);
                         }
 
-                        if (is_dir($dir . '/' . $course_name . '/' . $task_name . '/' . $name)) {
-                            Cleaner::removeDirectory($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
+                        if (!is_dir($dir . '/' . $course_name . '/' . $task_name . '/' . $name)) {
+                            mkdir($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
                         }
-						mkdir($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
                         $fp = fopen($dir . '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename, 'w');
                         fwrite($fp, $result);
                         fclose($fp);
@@ -438,7 +437,7 @@ class MoodleParser
                         }
                     }
                     if ($this->build_and_compile) {
-                         Tester::testOnPath($file_path,$errors);
+                        Tester::testOnPath($file_path, $errors);
                     }
                     echo("<br>");
                     Cleaner::clearDir($file_path);
@@ -454,14 +453,13 @@ $is_auth = $mp->login();
 echo $is_auth ? 'Login success' : 'Login failed';
 echo '<br>';
 $my_html ='';
-if ($is_auth === true) {	
+if ($is_auth === true) {
     $mp->parseAllTask();
 }
 $my_html = ob_get_clean();
-if($mp->getSendResultOnEmail()){
-	Reporter::sendMail($my_html,$mp->getEmail());
+if ($mp->getSendResultOnEmail()) {
+    Reporter::sendMail($my_html, $mp->getEmail());
 }
 echo $my_html;
-
 
 
