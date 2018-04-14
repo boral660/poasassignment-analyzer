@@ -24,6 +24,11 @@ class Tester
      * @var string запуск на linux системах
      */
     private static $linux_client = false;
+	
+    /**
+     * @var string генератор для cmake
+     */
+    private static $generator_for_CMake = "MinGW Makefiles";
 
 
     /**
@@ -34,6 +39,16 @@ class Tester
     {
         Tester::$path_to_CMake = $path;
     }
+	
+	  /**
+     * Устанавливает генератор для cmake
+     * @param название генератора
+     */
+    public static function setGeneratorForCMake($generator)
+    {
+        Tester::$generator_for_CMake =$generator;
+    }
+
 
     /**
      * Устанавливает значение для пути к QMake
@@ -85,11 +100,11 @@ class Tester
             if ($cmake_path != null) {
                 // Составляем команду
                 if (Tester::$linux_client) {
-                    $comand = 'cmake  -G "Unix Makefiles"';
+                    $comand = 'cmake  -G "' . Tester::$generator_for_CMake;
                 } else {
-                    $comand = '"' .  Tester::$path_to_CMake . '\\cmake.exe" -G "MinGW Makefiles"';
+                    $comand = '"' .  Tester::$path_to_CMake . '\\cmake.exe" -G "' . Tester::$generator_for_CMake;
                 }
-                $comand .= ' -B"' . $path . '/build" -H"' . $path . '/build"' . ' 2> cmakeError.txt';
+                $comand .= '" -B"' . $path . '/build" -H"' . $path . '/build"' . ' 2> cmakeError.txt';
                 exec($comand, $error);
                 $result = 1;
 

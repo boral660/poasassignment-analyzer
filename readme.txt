@@ -38,4 +38,7 @@ path_to_CMake
 path_to_QMake 
 path_to_Make 
 
+Следует указать какой генератор должен использовать cmake при генерации
+generator_for_CMake
+
 Если работа происходит в linux системах, пути указывать не следует.

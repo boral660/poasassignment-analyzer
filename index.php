@@ -275,7 +275,7 @@ class MoodleParser
         }
 
         $students_count = count($this->links[$course_name][$task_id]);
-        echo "<h3>Ответ на << {$task_name} >>";
+        echo "<h3>Ответ на <<  {$task_name}  >>";
         echo "    в курсе << {$course_name} >>";
         echo "    предоставили {$students_count} студентов:</h3>";
         foreach ($this->links[$course_name][$task_id] as $key => $value) {
@@ -338,6 +338,9 @@ class MoodleParser
             if ($ini_array['path_to_QMake'] !== null) {
                 Tester::setQMakePath($ini_array['path_to_QMake']);
             }
+			if ($ini_array['generator_for_CMake'] !== null) {
+                Tester::setGeneratorForCMake($ini_array['generator_for_CMake']);
+            }
 
             if ($ini_array['path_to_Make'] !== null) {
                 Tester::setMakePath($ini_array['path_to_Make']);
@@ -393,7 +396,7 @@ class MoodleParser
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
                     if ($this->build_and_compile) {
-                        echo "<h3>Тестирование работы по задаче <<" . $task_name . ">> студента " . $name . ":</h3>";
+                        echo "<h3>Тестирование работы по задаче << " . $task_name . " >> студента " . $name . ":</h3>";
                     }
                     foreach ($student['answers'] as $answer) {
                         $host            = $answer['answer_link'];
