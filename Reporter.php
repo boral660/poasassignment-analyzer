@@ -5,6 +5,20 @@
 class Reporter
 {
     /**
+     * @var string путь к moodle
+     */
+    private static $moodle_url = '';
+
+    /**
+     * Установить moodle_url
+     */
+    public static function setMoodleUrl($url)
+    {
+        $str = stripos($url, '/', 7);
+        Reporter::$moodle_url = substr($url, 0, $str+1);
+    }
+
+    /**
      * Производит отправку сообщения с текстом на почту
      * @param string[] текст сообщения
      * @param string адресс электронной почты
@@ -112,7 +126,7 @@ class Reporter
     public static function sendComment($errors, $task, $cookie_file)
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "http://edu.vstu.org/comment/comment_ajax.php"); // отправляем на
+        curl_setopt($ch, CURLOPT_URL,  Reporter::$moodle_url . "comment/comment_ajax.php"); // отправляем наззззззззззззззззззззззззззззззззззззззззззззз
         curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
@@ -121,19 +135,59 @@ class Reporter
         curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file); // сохранять куки в файл
         curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, array(
-            'sesskey'=>'fsm7VgbF1M',
-            'action' => 'add',
-            'content' => "LLelelel"
-        ));
-        $strs = file($cookie_file);
-        print_r($strs);
-        print_r($ch);
-
+        curl_setopt($ch, CURLOPT_POSTFIELDS, Reporter::arrayForAjax($errors, $task, $cookie_file));
         $ex            = curl_exec($ch);
         curl_close($ch);
+    }
 
-        return $ex;
+    /**
+     * Парсит страницу, для того что бы получить данные для запроса отправки комментов
+     * @param string адресс сайта с комментарием
+     * @return массив с полями и их значениями
+     */
+    public static function arrayForAjax($text, $task, $cookie_file)
+    {
+        // Получаем страницу для парсинга
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $task); // отправляем на
+        curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // таймаут
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file); // сохранять куки в файл
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file);
+
+        $ex            = curl_exec($ch);
+        $taskhtml = $ex;
+        curl_close($ch);
+
+        // Парсим html
+        $dom = new DOMDocument();
+        @$dom->loadHTML($taskhtml);
+        $xpath       = new DOMXPath($dom);
+        //echo($taskhtml);
+        $result = array();
+        $result['sesskey'] = $xpath->query('//*[@name="sesskey"]')->item(0)->attributes->item(2)->nodeValue;
+
+        $result['action'] = "add";
+
+        $result['client_id'] = explode("-", $xpath->query('//*[@class="fd"]')->item(0)->attributes->item(1)->nodeValue)[2];
+
+        $str = $xpath->query('//*[@class="poasassignment-table"]//a/@href')->item(0)->nodeValue;
+        $result['itemid'] =  explode('/', $str)[count(explode('/', $str))-2];
+
+        $result['area'] = 'poasassignment_comment';
+
+        $result['courseid'] =  explode("?", $xpath->query('//*[@class="list-group-item list-group-item-action "]')->item(0)->attributes->item(1)->nodeValue)[1];
+        $result['courseid'] =  explode("=", $result['courseid'])[1];
+
+        $result['contextid'] =  explode('/', $str)[count(explode('/', $str))-5];
+
+        $result['component'] = 'mod_poasassignment';
+        $result['content'] = implode($text);
+
+        return($result);
     }
 }
 

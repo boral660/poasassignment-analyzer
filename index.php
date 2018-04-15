@@ -24,6 +24,11 @@ class MoodleParser
      */
     private $send_result_on_email = false;
 
+	 /**
+     * @var array следует ли отослать результат в комментарии
+     */
+    private $write_on_comment = false;
+	
     /**
      * @var string путь к winRar
      */
@@ -275,8 +280,8 @@ class MoodleParser
         }
 
         $students_count = count($this->links[$course_name][$task_id]);
-        echo "<h3>Ответ на <<  {$task_name}  >>";
-        echo "    в курсе << {$course_name} >>";
+        echo "<h3>Ответ на   {$task_name}  ";
+        echo "    в курсе  {$course_name} ";
         echo "    предоставили {$students_count} студентов:</h3>";
         foreach ($this->links[$course_name][$task_id] as $key => $value) {
             echo '<p><a href="' . $value['profile'] . '">' . $key . '</a> предоставил для проверки ';
@@ -310,6 +315,7 @@ class MoodleParser
 
             if ($ini_array['login_url'] !== null) {
                 $this->login_url = $ini_array['login_url'];
+				Reporter::setMoodleUrl($ini_array['login_url']);
             }
             if ($ini_array['task_url'] !== null) {
                 $this->task_url = $ini_array['task_url'];
@@ -361,6 +367,9 @@ class MoodleParser
             if ($ini_array['send_result_on_email'] !== null) {
                 $this->send_result_on_email = $ini_array['send_result_on_email'];
             }
+			if ($ini_array['write_on_comment'] !== null) {
+                $this->write_on_comment = $ini_array['write_on_comment'];
+            }
         }
     }
 
@@ -396,7 +405,7 @@ class MoodleParser
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
                     if ($this->build_and_compile) {
-                        echo "<h3>Тестирование работы по задаче << " . $task_name . " >> студента " . $name . ":</h3>";
+                        echo "<h3>Тестирование работы по задаче  " . $task_name . " студента " . $name . ":</h3>";
                     }
                     foreach ($student['answers'] as $answer) {
                         $host            = $answer['answer_link'];
@@ -439,8 +448,11 @@ class MoodleParser
                             $this->unpackFile($file_path . '/' . $output_filename, $errors);
                         }
                     }
+					
                     if ($this->build_and_compile) {
                         Tester::testOnPath($file_path, $errors);
+						if(!empty($errors) && $this->write_on_comment)
+							Reporter::sendComment($errors, $this->links[$course_name][$task_name][$name]['grade'],$this->cookie_file);
                     }
                     echo("<br>");
                     Cleaner::clearDir($file_path);
