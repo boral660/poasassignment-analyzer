@@ -144,7 +144,7 @@ class Tester
         if (Tester::$linux_client) {
             $comand = "make";
         } else {
-            $comand = '"' .  Tester::$path_to_Make . '\\make.exe"';
+            $comand = '"' .  Tester::$path_to_Make . '\mingw32-make.exe"';
         }
         // Если файл не qt указываем откуда брать файлы
         if ($qt == 1) {
