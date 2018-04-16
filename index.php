@@ -29,6 +29,11 @@ class MoodleParser
      */
     private $write_on_comment = false;
 	
+	 /**
+     * @var array следует ли записывать результат в лог, а не на экран
+     */
+    private $write_on_log = true;
+	
     /**
      * @var string путь к winRar
      */
@@ -109,6 +114,13 @@ class MoodleParser
     {
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
+	/**
+     * Позволяет получить информацию о том, следует ли записывать в лог файл
+     */
+    public function writeOnLog()
+    {
+        return $this->write_on_log;
+    }
 
     /**
      * Позволяет получить email указанный в файле
@@ -164,9 +176,14 @@ class MoodleParser
             'username' => $this->username,
             'password' => $this->password
         ));
+		$stderr = fopen("curl.log", "w");
+		curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
+		curl_setopt($ch, CURLOPT_STDERR, $stderr);
+
         $ex      = curl_exec($ch);
         $is_auth = $this->isAuth($ex);
         curl_close($ch);
+		fclose ($stderr);
 
         return $is_auth;
     }
@@ -208,11 +225,16 @@ class MoodleParser
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); // сохранять куки в файл
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
-
+	
+		$stderr = fopen("curl.log", "a");
+		curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
+		curl_setopt($ch, CURLOPT_STDERR, $stderr);
+		
         $ex            = curl_exec($ch);
         $is_get_course = $this->isGetCourse($this->answers_html = $ex);
         curl_close($ch);
-
+		fclose ($stderr);
+		
         return $is_get_course;
     }
 
@@ -280,9 +302,9 @@ class MoodleParser
         }
 
         $students_count = count($this->links[$course_name][$task_id]);
-        echo "<h3>Ответ на   {$task_name}  ";
-        echo "    в курсе  {$course_name} ";
-        echo "    предоставили {$students_count} студентов:</h3>";
+        echo "<h3>Ответ на {$task_name}  ";
+        echo " в курсе  {$course_name} ";
+        echo " предоставили {$students_count} студентов:</h3>";
         foreach ($this->links[$course_name][$task_id] as $key => $value) {
             echo '<p><a href="' . $value['profile'] . '">' . $key . '</a> предоставил для проверки ';
 
@@ -292,6 +314,7 @@ class MoodleParser
 
             echo '</p>';
         }
+		  echo '<br>';
     }
 
     /**
@@ -370,6 +393,9 @@ class MoodleParser
 			if ($ini_array['write_on_comment'] !== null) {
                 $this->write_on_comment = $ini_array['write_on_comment'];
             }
+			if ($ini_array['write_on_log'] !== null) {
+                $this->write_on_log = $ini_array['write_on_log'];
+            }
         }
     }
 
@@ -405,7 +431,7 @@ class MoodleParser
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
                     if ($this->build_and_compile) {
-                        echo "<h3>Тестирование работы по задаче  " . $task_name . " студента " . $name . ":</h3>";
+                        echo "<h3>Тестирование работы по задаче " . $task_name . " студента " . $name . ":</h3>";
                     }
                     foreach ($student['answers'] as $answer) {
                         $host            = $answer['answer_link'];
@@ -419,9 +445,13 @@ class MoodleParser
                         curl_setopt($ch, CURLOPT_HEADER, 0);
                         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file);
                         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
+						$stderr = fopen("curl.log", "a");
+						curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
+						curl_setopt($ch, CURLOPT_STDERR, $stderr);
 
                         $result = curl_exec($ch);
                         curl_close($ch);
+						fclose ($stderr);
                         $dir = $this->files_download_to;
 
                         if (!is_dir($dir)) {
@@ -472,12 +502,15 @@ if ($is_auth === true) {
     $mp->parseAllTask();
 }
 $my_html = ob_get_clean();
-$logFile = Reporter::writeOnFile($my_html);
-
+if($mp->writeOnLog()) {
+	$logFile = Reporter::writeOnFile($my_html);
+	echo "Testing is completed, the result stored in the .log file";
+} else {
+	echo $my_html;
+}
 if ($mp->getSendResultOnEmail()) {
 	//Reporter::sendMailWithFile($logFile, $mp->getEmail());
     Reporter::sendMail($my_html, $mp->getEmail());
 }
-echo $my_html;
 
 

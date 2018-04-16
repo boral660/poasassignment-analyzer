@@ -86,6 +86,7 @@ class Reporter
      */
     public static function writeOnFile($text)
     {
+		date_default_timezone_set('Etc/GMT-3');
         if (!is_dir("./Logs")) {
             mkdir("./Logs");
         }
@@ -137,7 +138,11 @@ class Reporter
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, Reporter::arrayForAjax($errors, $task, $cookie_file));
         $ex            = curl_exec($ch);
+		$stderr = fopen("curl.log", "a");
+		curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
+		curl_setopt($ch, CURLOPT_STDERR, $stderr);
         curl_close($ch);
+		fclose ($stderr);
     }
 
     /**
@@ -157,16 +162,19 @@ class Reporter
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
         curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file); // сохранять куки в файл
         curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file);
-
+		$stderr = fopen("curl.log", "a");
+		curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
+		curl_setopt($ch, CURLOPT_STDERR, $stderr);
+		
         $ex            = curl_exec($ch);
         $taskhtml = $ex;
         curl_close($ch);
-
+	    fclose ($stderr);
+		
         // Парсим html
         $dom = new DOMDocument();
         @$dom->loadHTML($taskhtml);
         $xpath       = new DOMXPath($dom);
-        //echo($taskhtml);
         $result = array();
         $result['sesskey'] = $xpath->query('//*[@name="sesskey"]')->item(0)->attributes->item(2)->nodeValue;
 
