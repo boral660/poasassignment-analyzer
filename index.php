@@ -1,14 +1,14 @@
 <?php
+
 include_once 'Cleaner.php';
-include_once  'Tester.php';
-include_once  'Reporter.php';
+include_once 'Tester.php';
+include_once 'Reporter.php';
 
 /**
- * Class MoodleParser Выполняет парсинг страницы с ответами на мудл
+ * Class MoodleParser Выполняет парсинг страницы с ответами на мудл.
  */
 class MoodleParser
 {
-
     /**
      * @var string разметка страницы с ответами
      */
@@ -24,16 +24,16 @@ class MoodleParser
      */
     private $send_result_on_email = false;
 
-	 /**
+    /**
      * @var array следует ли отослать результат в комментарии
      */
     private $write_on_comment = false;
-	
-	 /**
+
+    /**
      * @var array следует ли записывать результат в лог, а не на экран
      */
     private $write_on_log = true;
-	
+
     /**
      * @var string путь к winRar
      */
@@ -48,7 +48,6 @@ class MoodleParser
      * @var string страница c заданиями
      */
     private $task_url = '';
-
 
     /**
      * @var array номера заданий, которые необходимо проверить
@@ -106,16 +105,18 @@ class MoodleParser
     }
 
     /**
-     * Определяет, удалось ли залогиниться
+     * Определяет, удалось ли залогиниться.
+     *
      * @param $data HTML страницы главной страницы (страницы после логина)
+     *
      * @return bool удалось ли залогиниться
      */
     public function isAuth($data)
     {
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
-	/**
-     * Позволяет получить информацию о том, следует ли записывать в лог файл
+    /**
+     * Позволяет получить информацию о том, следует ли записывать в лог файл.
      */
     public function writeOnLog()
     {
@@ -123,7 +124,7 @@ class MoodleParser
     }
 
     /**
-     * Позволяет получить email указанный в файле
+     * Позволяет получить email указанный в файле.
      */
     public function getEmail()
     {
@@ -131,24 +132,27 @@ class MoodleParser
     }
 
     /**
-     * Следует ли отправлять результат тестирования
+     * Следует ли отправлять результат тестирования.
      */
     public function getSendResultOnEmail()
     {
         return $this->send_result_on_email;
     }
     /**
-     * Определяет, удалось ли получить страницу с заданиями
+     * Определяет, удалось ли получить страницу с заданиями.
+     *
      * @param $data HTML страницы с ответами
+     *
      * @return bool удалось ли получить страницу с заданиями
      */
     public function isGetCourse($data)
     {
-        return (preg_match('/page-mod-poasassignment-view/', $data) === 1);
+        return preg_match('/page-mod-poasassignment-view/', $data) === 1;
     }
 
     /**
-     * Возвращает разметку страницы с ответами
+     * Возвращает разметку страницы с ответами.
+     *
      * @return string
      */
     public function getAnswersHtml()
@@ -157,7 +161,8 @@ class MoodleParser
     }
 
     /**
-     * Выполняет авторизацию на мудл
+     * Выполняет авторизацию на мудл.
+     *
      * @return bool удалось ли авторизоваться
      */
     public function login()
@@ -174,22 +179,22 @@ class MoodleParser
         curl_setopt($ch, CURLOPT_POST, 1); // использовать данные в post
         curl_setopt($ch, CURLOPT_POSTFIELDS, array(
             'username' => $this->username,
-            'password' => $this->password
+            'password' => $this->password,
         ));
-		$stderr = fopen("curl.log", "w");
-		curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
-		curl_setopt($ch, CURLOPT_STDERR, $stderr);
+        $stderr = fopen('curl.log', 'w');
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_STDERR, $stderr);
 
-        $ex      = curl_exec($ch);
+        $ex = curl_exec($ch);
         $is_auth = $this->isAuth($ex);
         curl_close($ch);
-		fclose ($stderr);
+        fclose($stderr);
 
         return $is_auth;
     }
 
     /**
-     * Выполняет парсинг всех заданий, идентификаторы которых указаны в конфигуранционном файле
+     * Выполняет парсинг всех заданий, идентификаторы которых указаны в конфигуранционном файле.
      */
     public function parseAllTask()
     {
@@ -201,17 +206,19 @@ class MoodleParser
                 $this->parse($task_id);
                 $this->testAnswers();
                 if (!$this->save_answers) {
-                    Cleaner::removeDirectory('./' . $this->files_download_to);
+                    Cleaner::removeDirectory('./'.$this->files_download_to);
                 }
                 //  $this->sendMail();
             }
-            echo "<br><br>";
+            echo '<br><br>';
         }
     }
 
     /**
-     * Выполняет переход на страницу с ответами
+     * Выполняет переход на страницу с ответами.
+     *
      * @param $task_id идентификатор задания для парсинга
+     *
      * @return bool удалось ли перейти на страницу с ответами
      */
     public function goToCourseAnswers($task_id)
@@ -225,23 +232,24 @@ class MoodleParser
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); // сохранять куки в файл
         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
-	
-		$stderr = fopen("curl.log", "a");
-		curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
-		curl_setopt($ch, CURLOPT_STDERR, $stderr);
-		
-        $ex            = curl_exec($ch);
+
+        $stderr = fopen('curl.log', 'a');
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_STDERR, $stderr);
+
+        $ex = curl_exec($ch);
         $is_get_course = $this->isGetCourse($this->answers_html = $ex);
         curl_close($ch);
-		fclose ($stderr);
-		
+        fclose($stderr);
+
         return $is_get_course;
     }
 
     /**
      * Выполняет перевод в траслит
+     *
      * @param $str строка которую необходимо перевести
-      * @param $onEng true - перевод с английского, false - перевод с русского
+     * @param $onEng true - перевод с английского, false - перевод с русского
      */
     public function translit($str, $onEng)
     {
@@ -255,43 +263,44 @@ class MoodleParser
     }
 
     /**
-     * Выполняет парсинг страницы с ответами
+     * Выполняет парсинг страницы с ответами.
+     *
      * @param $task_id идентификатор задания для парсинга
      */
     public function parse($task_id)
     {
         $dom = new DOMDocument();
         @$dom->loadHTML($this->answers_html);
-        $xpath       = new DOMXPath($dom);
+        $xpath = new DOMXPath($dom);
         $this->links = array();
-        $row_index   = -1;
-        $name        = null;
-        $task        = null;
+        $row_index = -1;
+        $name = null;
+        $task = null;
 
-        $task_name                 = $this->translit($xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue, true);
-        $course_name               = $this->translit($xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue, true);
+        $task_name = $this->translit($xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue, true);
+        $course_name = $this->translit($xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue, true);
 
         $this->links[$course_name] = array();
 
         $this->links[$course_name][$task_id] = array();
-        $pos=strripos($this->task_url, "/");
-        $moodle_url=substr($this->task_url, 0, $pos+1);
+        $pos = strripos($this->task_url, '/');
+        $moodle_url = substr($this->task_url, 0, $pos + 1);
         while ($row_index < 200) {
-            $row_index++;
-            $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c7"]/a')->item(0);
+            ++$row_index;
+            $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c7"]/a')->item(0);
             if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1 || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
-                $name                                                          = $xpath->query('//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c1"]/a')->item(0);
-                $student_name                                                  = $this->translit($name->nodeValue, true);
-                $this->links[$course_name][$task_id][$student_name]            = array();
+                $name = $xpath->query('//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c1"]/a')->item(0);
+                $student_name = $this->translit($name->nodeValue, true);
+                $this->links[$course_name][$task_id][$student_name] = array();
                 $this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
-                $this->links[$course_name][$task_id][$student_name]['grade']   = $moodle_url . $task->getAttribute('href');
+                $this->links[$course_name][$task_id][$student_name]['grade'] = $moodle_url.$task->getAttribute('href');
                 $this->links[$course_name][$task_id][$student_name]['answers'] = array();
-                $task_index                                                    = 0;
+                $task_index = 0;
                 while (true) {
-                    if ($xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//@href')->item($task_index) !== null) {
-                        $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_link'] = $xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//@href')->item($task_index)->nodeValue; // ссылка на ответ
-                        $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_name'] = $this->translit($xpath->query('.//*[@id="mod-poasassignment-submissions_r' . $row_index . '_c3"]//text()')->item($task_index * 2)->nodeValue, true); // наименование ответа
-                        $task_index++;
+                    if ($xpath->query('.//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c3"]//@href')->item($task_index) !== null) {
+                        $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_link'] = $xpath->query('.//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c3"]//@href')->item($task_index)->nodeValue; // ссылка на ответ
+                        $this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_name'] = $this->translit($xpath->query('.//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c3"]//text()')->item($task_index * 2)->nodeValue, true); // наименование ответа
+                        ++$task_index;
                     } else {
                         break;
                     }
@@ -306,23 +315,23 @@ class MoodleParser
         echo " в курсе  {$course_name} ";
         echo " предоставили {$students_count} студентов:</h3>";
         foreach ($this->links[$course_name][$task_id] as $key => $value) {
-            echo '<p><a href="' . $value['profile'] . '">' . $key . '</a> предоставил для проверки ';
+            echo '<p><a href="'.$value['profile'].'">'.$key.'</a> предоставил для проверки ';
 
             foreach ($value['answers'] as $answer) {
-                echo '<a href="' . $answer['answer_link'] . '">' . $answer['answer_name'] . '</a> ';
+                echo '<a href="'.$answer['answer_link'].'">'.$answer['answer_name'].'</a> ';
             }
 
             echo '</p>';
         }
-		  echo '<br>';
+        echo '<br>';
     }
 
     /**
-     * Инициализирует данными из конфигурационного файла
+     * Инициализирует данными из конфигурационного файла.
      */
     public function init()
     {
-        $ini_array = parse_ini_file("conf.ini");
+        $ini_array = parse_ini_file('conf.ini');
         if ($ini_array !== null && $ini_array !== false) {
             if ($ini_array['username'] !== null) {
                 $this->username = $ini_array['username'];
@@ -338,7 +347,7 @@ class MoodleParser
 
             if ($ini_array['login_url'] !== null) {
                 $this->login_url = $ini_array['login_url'];
-				Reporter::setMoodleUrl($ini_array['login_url']);
+                Reporter::setMoodleUrl($ini_array['login_url']);
             }
             if ($ini_array['task_url'] !== null) {
                 $this->task_url = $ini_array['task_url'];
@@ -367,7 +376,7 @@ class MoodleParser
             if ($ini_array['path_to_QMake'] !== null) {
                 Tester::setQMakePath($ini_array['path_to_QMake']);
             }
-			if ($ini_array['generator_for_CMake'] !== null) {
+            if ($ini_array['generator_for_CMake'] !== null) {
                 Tester::setGeneratorForCMake($ini_array['generator_for_CMake']);
             }
 
@@ -390,40 +399,99 @@ class MoodleParser
             if ($ini_array['send_result_on_email'] !== null) {
                 $this->send_result_on_email = $ini_array['send_result_on_email'];
             }
-			if ($ini_array['write_on_comment'] !== null) {
+            if ($ini_array['write_on_comment'] !== null) {
                 $this->write_on_comment = $ini_array['write_on_comment'];
             }
-			if ($ini_array['write_on_log'] !== null) {
+            if ($ini_array['write_on_log'] !== null) {
                 $this->write_on_log = $ini_array['write_on_log'];
             }
+            $misOptions = $this->checkOptions();
+            if (!empty($misOptions)) {
+                throw new Exception('Для работы программы необходимо установить следующие опции: '.implode(',', $misOptions));
+            }
+        } else {
+            throw new Exception('Не возможно считать настройки с файла conf.ini или он пустой');
         }
+    }
+    /**
+     * Проверить, все ли необходимые параметры установлены.
+     *
+     * @return параметры, которые не были установлены
+     */
+    public function checkOptions()
+    {
+        $params = [];
+        if ($this->username == null) {
+            array_push($params, 'username');
+        }
+
+        if ($this->password == null) {
+            array_push($params, 'password');
+        }
+
+        if ($this->login_url == null) {
+            array_push($params, 'login_url');
+        }
+
+        if ($this->task_url == null) {
+            array_push($params, 'task_url');
+        }
+
+        if ($this->send_result_on_email == true && $this->email == null) {
+            array_push($params, 'email');
+        }
+
+        if ($this->unpack_answers == true && $this->path_to_winrar == null) {
+            array_push($params, 'path_to_winrar');
+        }
+
+        if ($this->build_and_compile == true) {
+            if (Tester::getCMakePath() == null) {
+                array_push($params, 'path_to_CMake');
+            }
+
+            if (Tester::getGeneratorForCMake() == null) {
+                array_push($params, 'generator_for_CMake');
+            }
+
+            if (Tester::getQMakePath() == null) {
+                array_push($params, 'path_to_QMake');
+            }
+
+            if (Tester::getMakePath() == null) {
+                array_push($params, 'path_to_Make');
+            }
+        }
+
+        return $params;
     }
 
     /**
-     * Распаковывает один файл
+     * Распаковывает один файл.
+     *
      * @param $file_path путь к файлу для распаковки
      * @param sting[] массив ошибок
      */
     public function unpackFile($file_path, &$errors)
     {
-        $errors   = array();
+        $errors = array();
         $file_ext = strrchr($file_path, '.');
         if ($file_ext == '.rar' || $file_ext == '.zip' || $file_ext == '.tar' || $file_ext == '.gz' || $file_ext == '.bz2' || $file_ext == '.7z' || $file_ext == '.z') {
             $name = strrchr($file_path, '/');
             $path = substr($file_path, 0, strlen($file_path) - strlen($name) + 1);
             if ($this->linux_client) {
-                $comand = 'unrar x -o+ "' . $file_path . '" "' . $path . '"';
+                $comand = 'unrar x -o+ "'.$file_path.'" "'.$path.'"';
             } else {
-                $comand = '"' . $this->path_to_winrar . '" x -o+ "' . $file_path . '" "' . $path . '" 2> rarError.txt';
+                $comand = '"'.$this->path_to_winrar.'" x -o+ "'.$file_path.'" "'.$path.'" 2> rarError.txt';
             }
             exec($comand, $error);
-            $header = "Error during unpacking file: ";
-            Tester::readErrorOnFile("./rarError.txt", $header, $errors);
+            $header = 'Error during unpacking file: ';
+            Tester::readErrorOnFile('./rarError.txt', $header, $errors);
         }
     }
 
     /**
-     * Скачивает выполненные работы
+     * Скачивает выполненные работы.
      */
     public function testAnswers()
     {
@@ -431,12 +499,12 @@ class MoodleParser
             foreach ($course as $task_name => $task) {
                 foreach ($task as $name => $student) {
                     if ($this->build_and_compile) {
-                        echo "<h3>Тестирование работы по задаче " . $task_name . " студента " . $name . ":</h3>";
+                        echo '<h3>Тестирование работы по задаче '.$task_name.' студента '.$name.':</h3>';
                     }
                     foreach ($student['answers'] as $answer) {
-                        $host            = $answer['answer_link'];
+                        $host = $answer['answer_link'];
                         $output_filename = $answer['answer_name'];
-                        $ch              = curl_init();
+                        $ch = curl_init();
                         curl_setopt($ch, CURLOPT_URL, $host);
                         curl_setopt($ch, CURLOPT_VERBOSE, 1);
                         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
@@ -445,71 +513,78 @@ class MoodleParser
                         curl_setopt($ch, CURLOPT_HEADER, 0);
                         curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file);
                         curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
-						$stderr = fopen("curl.log", "a");
-						curl_setopt($ch, CURLOPT_VERBOSE, TRUE);
-						curl_setopt($ch, CURLOPT_STDERR, $stderr);
+                        $stderr = fopen('curl.log', 'a');
+                        curl_setopt($ch, CURLOPT_VERBOSE, true);
+                        curl_setopt($ch, CURLOPT_STDERR, $stderr);
 
                         $result = curl_exec($ch);
                         curl_close($ch);
-						fclose ($stderr);
+                        fclose($stderr);
                         $dir = $this->files_download_to;
 
                         if (!is_dir($dir)) {
                             mkdir($dir);
                         }
 
-                        if (!is_dir($dir . '/' . $course_name)) {
-                            mkdir($dir . '/' . $course_name);
+                        if (!is_dir($dir.'/'.$course_name)) {
+                            mkdir($dir.'/'.$course_name);
                         }
 
-                        if (!is_dir($dir . '/' . $course_name . '/' . $task_name)) {
-                            mkdir($dir . '/' . $course_name . '/' . $task_name);
+                        if (!is_dir($dir.'/'.$course_name.'/'.$task_name)) {
+                            mkdir($dir.'/'.$course_name.'/'.$task_name);
                         }
 
-                        if (!is_dir($dir . '/' . $course_name . '/' . $task_name . '/' . $name)) {
-                            mkdir($dir . '/' . $course_name . '/' . $task_name . '/' . $name);
+                        if (!is_dir($dir.'/'.$course_name.'/'.$task_name.'/'.$name)) {
+                            mkdir($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
                         }
-                        $fp = fopen($dir . '/' . $course_name . '/' . $task_name . '/' . $name . '/' . $output_filename, 'w');
+                        $fp = fopen($dir.'/'.$course_name.'/'.$task_name.'/'.$name.'/'.$output_filename, 'w');
                         fwrite($fp, $result);
                         fclose($fp);
-                        $errors    = array();
-                        $file_path = $dir . '/' . $course_name . '/' . $task_name . '/' . $name;
+                        $errors = array();
+                        $file_path = $dir.'/'.$course_name.'/'.$task_name.'/'.$name;
                         if ($this->unpack_answers) {
-                            $this->unpackFile($file_path . '/' . $output_filename, $errors);
+                            $this->unpackFile($file_path.'/'.$output_filename, $errors);
                         }
                     }
-					
+
                     if ($this->build_and_compile) {
                         Tester::testOnPath($file_path, $errors);
-						if(!empty($errors) && $this->write_on_comment)
-							Reporter::sendComment($errors, $this->links[$course_name][$task_name][$name]['grade'],$this->cookie_file);
+                        if (!empty($errors) && $this->write_on_comment) {
+                            Reporter::sendComment($errors, $this->links[$course_name][$task_name][$name]['grade'], $this->cookie_file);
+                        }
                     }
-                    echo("<br>");
+                    echo '<br>';
                     Cleaner::clearDir($file_path);
                 }
             }
         }
     }
 }
-
-$mp = new MoodleParser();
+error_reporting(E_ALL & ~E_NOTICE);
 ob_start();
+try {
+    $mp = new MoodleParser();
+} catch (Exception $e) {
+    echo 'Выброшено исключение: ', $e->getMessage(), ' ';
+    Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
+    exit();
+}
 $is_auth = $mp->login();
 echo $is_auth ? 'Login success' : 'Login failed';
 echo '<br>';
-$my_html ='';
+$my_html = '';
 if ($is_auth === true) {
     $mp->parseAllTask();
 }
 $my_html = ob_get_clean();
-if($mp->writeOnLog()) {
-	$logFile = Reporter::writeOnFile($my_html);
-	echo "Testing is completed, the result stored in the .log file";
+if ($mp->writeOnLog()) {
+    $logFile = Reporter::writeOnFile($my_html);
+    echo 'Testing is completed, the result stored in the .log file';
 } else {
-	echo $my_html;
+    echo $my_html;
 }
 if ($mp->getSendResultOnEmail()) {
-	//Reporter::sendMailWithFile($logFile, $mp->getEmail());
+    //Reporter::sendMailWithFile($logFile, $mp->getEmail());
     Reporter::sendMail($my_html, $mp->getEmail());
 }
 

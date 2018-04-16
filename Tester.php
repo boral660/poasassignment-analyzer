@@ -30,6 +30,39 @@ class Tester
      */
     private static $generator_for_CMake = "MinGW Makefiles";
 
+	  /**
+     * @param string путь к CMake
+     */
+    public static function getCMakePath()
+    {
+        return Tester::$path_to_CMake;
+    }
+	
+	  /**
+     * @param название генератора
+     */
+    public static function getGeneratorForCMake()
+    {
+        return Tester::$generator_for_CMake;
+    }
+
+
+    /**
+     * @param string путь к QMake
+     */
+    public static function getQMakePath()
+    {
+         return Tester::$path_to_QMake;
+    }
+
+    /**
+     * @param string путь к Make
+     */
+    public static function getMakePath()
+    {
+         return Tester::$path_to_Make;
+    }
+
 
     /**
      * Устанавливает значение для пути к CMake
