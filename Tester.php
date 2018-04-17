@@ -210,10 +210,10 @@ class Tester
             // Установление файлов с кодом
             $body .= "set(SOURCE";
             foreach ($source_files as $sfile) {
-                $body .= " ";
+                $body .= ' "';
                 $res = substr($sfile, strlen($path) + 1);
                 $res = str_replace('\\', '/', $res);
-                $body .= '../' . $res;
+                $body .= '../' . $res . '"';
             }
             $body .= ")\r\n";
 
