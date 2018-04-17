@@ -540,6 +540,10 @@ class MoodleParser
                         if (!is_dir($dir.'/'.$course_name.'/'.$task_name.'/'.$name)) {
                             mkdir($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
                         }
+						else {
+							Cleaner::removeDirectory($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
+							 mkdir($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
+						}
                         $fp = fopen($dir.'/'.$course_name.'/'.$task_name.'/'.$name.'/'.$output_filename, 'w');
                         fwrite($fp, $result);
                         fclose($fp);
