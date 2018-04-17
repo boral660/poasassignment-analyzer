@@ -198,7 +198,8 @@ class Tester
     private static function createCmakelist($path)
     {
         $cmake_path   = $path . "/build/CMakeLists.txt";
-        $source_files = Tester::recursiveGlob($path, '*.cpp');
+		
+        $source_files = array_merge(Tester::recursiveGlob($path, '*.cpp'),Tester::recursiveGlob($path, '*.c'));
         if (!empty($source_files)) {
             $header_files = Tester::recursiveGlob($path, '*.h');
             // Создание файла
@@ -282,10 +283,13 @@ class Tester
         $result = Tester::buildProject($file_path, $errors);
         if ($result != 2) {
             Tester::compileProject($file_path, $result, $errors);
+			 if (empty($errors)) {
+				echo "Testing success";
+			}
         }
-        if (empty($errors)) {
-            echo "Testing success";
-        }
+        else {
+			echo "Файлы с кодом расширения .c или .cpp не были найдены";
+		}
 
         foreach ($errors as $error) {
             echo($error . "<br>");
