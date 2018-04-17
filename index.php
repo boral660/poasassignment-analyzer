@@ -42,7 +42,7 @@ class MoodleParser
     /**
      * @var string страница авторизации
      */
-    private $login_url = 'http://edu.vstu.ru/login/index.php';
+    private $login_url = '';
 
     /**
      * @var string страница c заданиями
@@ -208,7 +208,6 @@ class MoodleParser
                 if (!$this->save_answers) {
                     Cleaner::removeDirectory('./'.$this->files_download_to);
                 }
-                //  $this->sendMail();
             }
             echo '<br><br>';
         }
@@ -277,8 +276,8 @@ class MoodleParser
         $name = null;
         $task = null;
 
-        $task_name = $this->translit($xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue, true);
-        $course_name = $this->translit($xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue, true);
+        $task_name = $xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue;
+        $course_name = $xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue;
 
         $this->links[$course_name] = array();
 
@@ -290,7 +289,7 @@ class MoodleParser
             $task = $xpath->query('//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c7"]/a')->item(0);
             if ($task !== null && ($task->nodeValue === 'Add grade' || $task->nodeValue === 'Добавить оценку' || preg_match('/Оценка устарела/', $task->parentNode->nodeValue) === 1 || preg_match('/Outdated/', $task->parentNode->nodeValue) === 1)) {
                 $name = $xpath->query('//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c1"]/a')->item(0);
-                $student_name = $this->translit($name->nodeValue, true);
+                $student_name = $name->nodeValue;
                 $this->links[$course_name][$task_id][$student_name] = array();
                 $this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
                 $this->links[$course_name][$task_id][$student_name]['grade'] = $moodle_url.$task->getAttribute('href');
@@ -502,6 +501,10 @@ class MoodleParser
                         echo '<h3>Тестирование работы по задаче '.$task_name.' студента '.$name.':</h3>';
                     }
                     foreach ($student['answers'] as $answer) {
+						$name =  $this->translit($name,true);
+						$course_name =  $this->translit($course_name,true);
+						$task_name =  $this->translit($task_name,true);
+						
                         $host = $answer['answer_link'];
                         $output_filename = $answer['answer_name'];
                         $ch = curl_init();
