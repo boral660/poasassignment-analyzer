@@ -109,6 +109,14 @@ class Tester
     {
         Tester::$linux_client = $isLinux;
     }
+	/**
+     * Собрать проект с помощью qmake
+     * @param string путь к файлам проекта
+     */
+    private static function buildOnQT($path)
+    {
+		//todo
+	}
 
 
     /**
@@ -122,9 +130,9 @@ class Tester
         $result = 2;
         //Удаляем директорию
         if (is_dir($path . '/build')) {
-            Cleaner::removeDirectory($path . '/build');
+        //    Cleaner::removeDirectory($path . '/build');
         }
-        mkdir($path . '/build');
+		else    {mkdir($path . '/build');}
         $qtfiles = Tester::recursiveGlob($path, '*.pro');
         // Если это не qt проект
         if (empty($qtfiles)) {
@@ -190,6 +198,7 @@ class Tester
         $header = "Error during compilation with make: ";
         Tester::readErrorOnFile("./makeError.txt", $header, $errors);
     }
+	
 
     /**
      * Создаёт файл для построенния проекта
@@ -243,9 +252,9 @@ class Tester
      * @param string - маска, по которой осуществляется поиск
      * @return array - полный список найденных файлов
      */
-    private static function recursiveGlob($startDir, $fileMask)
+    public static function recursiveGlob($startDir, $fileMask)
     {
-        $found = glob($startDir . DIRECTORY_SEPARATOR . $fileMask);
+        $found = glob($startDir . DIRECTORY_SEPARATOR . $fileMask, GLOB_BRACE);
         $dirs  = glob($startDir . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
         foreach ($dirs as $dir) {
             $found = array_merge($found, Tester::recursiveGlob($dir, $fileMask));

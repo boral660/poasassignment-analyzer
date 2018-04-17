@@ -260,6 +260,44 @@ class MoodleParser
             return str_replace($lat, $rus, $str);
         }
     }
+	   /**
+     * Выполняет перевод в транслит названия всех папок
+     *
+     * @param $sdir - папка с в которой необходимо рекурсивно провести операцию
+     */
+    public function translitAllDir($sdir)
+	{
+		$sdir = str_replace('/', '\\', $sdir);
+		
+		 $dirs  = glob($sdir . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
+		 foreach ($dirs as $dir) {
+			 $this->translitAllDir($dir);
+		 }
+		 $str = strripos($sdir, "\\") + 1;
+		 $dirname = substr($sdir,$str); 
+		 $str = strlen($sdir) - $str;
+		 $otherdir = substr($sdir,0,$str*(-1));
+
+	  rename($sdir, $otherdir . $this->translit($dirname,true));
+	}
+	
+	   /**
+     * Выполняет перевод в транслит названия всех файлов в папке
+     *
+     * @param $dir - папка с в которой необходимо рекурсивно провести операцию
+     */
+    public function translitAllFiles($dir)
+    {
+		$this->translitAllDir($dir);
+	    $dirs  = glob($dir . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR); 
+		$found = Tester::recursiveGlob($dir, "*.{c,cpp,h}");
+
+		foreach ($found as $file) {
+			rename($file, $this->translit($file,true));
+		
+		}
+        return $found;
+    }
 
     /**
      * Выполняет парсинг страницы с ответами.
@@ -552,6 +590,7 @@ class MoodleParser
                         if ($this->unpack_answers) {
                             $this->unpackFile($file_path.'/'.$output_filename, $errors);
                         }
+						$this->translitAllFiles($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
                     }
 
                     if ($this->build_and_compile) {
