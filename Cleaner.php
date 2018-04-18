@@ -11,7 +11,7 @@ class Cleaner
      */
     public static function clearDir($path)
     {
-        Cleaner::removeDirectory($path . '/build');
+      //  Cleaner::removeDirectory($path . '/build');
         Cleaner::removeDirectory('./debug');
         Cleaner::removeDirectory('./release');
         Cleaner::removeFile('./cmakeError.txt');

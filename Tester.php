@@ -110,12 +110,24 @@ class Tester
         Tester::$linux_client = $isLinux;
     }
 	/**
-     * Собрать проект с помощью qmake
+     * Создать .pro файл
      * @param string путь к файлам проекта
      */
-    private static function buildOnQT($path)
+    public static function buildOnQT($path)
     {
-		//todo
+        $fileName =  __DIR__ . '/' . $path . '\\build\\project.pro';
+		if (Tester::$linux_client) {
+            $comand = "qmake";
+        } else {
+            $comand = '"' .  Tester::$path_to_QMake . '\\qmake.exe"';
+        }
+        $comand .= ' -project -nopwd "' . __DIR__ . '/' . $path . '" -o "'. $fileName .'"  2> qmakeError.txt';
+        exec($comand, $error);
+		
+        $fp = fopen($fileName, "a");
+        $text = "QT += core gui \r\ngreaterThan(QT_MAJOR_VERSION, 4): QT += widgets";
+        fwrite($fp, $text);
+        fclose($fp);
 	}
 
 
@@ -130,10 +142,11 @@ class Tester
         $result = 2;
         //Удаляем директорию
         if (is_dir($path . '/build')) {
-        //    Cleaner::removeDirectory($path . '/build');
+           Cleaner::removeDirectory($path . '/build');
         }
-		else    {mkdir($path . '/build');}
+		mkdir($path . '/build');
         $qtfiles = Tester::recursiveGlob($path, '*.pro');
+		Tester::buildOnQT($path);
         // Если это не qt проект
         if (empty($qtfiles)) {
             // Формируем cmake лист
