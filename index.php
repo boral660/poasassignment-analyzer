@@ -630,8 +630,10 @@ if ($mp->writeOnLog()) {
     echo $my_html;
 }
 if ($mp->getSendResultOnEmail()) {
-    //Reporter::sendMailWithFile($logFile, $mp->getEmail());
-    Reporter::sendMail($my_html, $mp->getEmail());
+    if($mp->writeOnLog())
+		Reporter::sendMailWithFile($logFile, $mp->getEmail());
+	else
+		Reporter::sendMail($my_html, $mp->getEmail());
 }
 
 
