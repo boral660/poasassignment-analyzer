@@ -208,7 +208,7 @@ class Tester
         $comand .= ' > makeLog.txt 2> makeError.txt';
         exec($comand, $error);
         // Вывести сообщение об ошибке
-        $header = "Error during compilation with make: ";
+        $header = "[Fail] Error during compilation with make: ";
         Tester::readErrorOnFile("./makeError.txt", $header, $errors);
     }
 	
@@ -306,11 +306,11 @@ class Tester
         if ($result != 2) {
             Tester::compileProject($file_path, $result, $errors);
 			 if (empty($errors)) {
-				echo "Testing success";
+				echo "[Pass] Testing success";
 			}
         }
         else {
-			echo "Файлы с кодом расширения .c или .cpp не были найдены";
+			echo "[Fail] Code files with extension .c or .cpp were not found";
 		}
 
         foreach ($errors as $error) {

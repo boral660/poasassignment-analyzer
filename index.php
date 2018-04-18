@@ -444,10 +444,10 @@ class MoodleParser
             }
             $misOptions = $this->checkOptions();
             if (!empty($misOptions)) {
-                throw new Exception('Для работы программы необходимо установить следующие опции: '.implode(',', $misOptions));
+                throw new Exception('To work, you need to install these options '.implode(',', $misOptions));
             }
         } else {
-            throw new Exception('Не возможно считать настройки с файла conf.ini или он пустой');
+            throw new Exception('It is not possible to open the conf.ini file, or it is empty');
         }
     }
     /**
@@ -522,7 +522,7 @@ class MoodleParser
                 $comand = '"'.$this->path_to_winrar.'" x -o+ "'.$file_path.'" "'.$path.'" 2> rarError.txt';
             }
             exec($comand, $error);
-            $header = 'Error during unpacking file: ';
+            $header = '[Fail] Error during unpacking file: ';
             Tester::readErrorOnFile('./rarError.txt', $header, $errors);
         }
     }
@@ -611,8 +611,8 @@ ob_start();
 try {
     $mp = new MoodleParser();
 } catch (Exception $e) {
-    echo 'Выброшено исключение: ', $e->getMessage(), ' ';
-    Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
+    echo '[Fail] Exception is thrown : ', $e->getMessage(), ' ';
+    Reporter::writeOnFile('[Fail] Exception is throw: '.$e->getMessage());
     exit();
 }
 $is_auth = $mp->login();
