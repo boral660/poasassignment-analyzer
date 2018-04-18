@@ -244,10 +244,10 @@ class Tester
                 // Заголовочные файлы
                 $body .= "set(HEADER";
                 foreach ($header_files as $hfile) {
-                    $body .= " ";
+                    $body .= ' "';
                     $res = substr($hfile, strlen($path) + 1);
                     $res = str_replace('\\', '/', $res);
-                    $body .= '../' . $res;
+                    $body .= '../' . $res. '"';
                 }
                 $body .= ")\r\n";
             }
