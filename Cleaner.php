@@ -36,7 +36,8 @@ class Cleaner
                     is_dir($obj) ? Cleaner::removeDirectory($obj) : unlink($obj);
                 }
             }
-            rmdir($dir);
+            if(!rmdir($dir))
+                 throw new Exception('Невозможно удалить папку: ' . $dir);
         }
     }
 	
@@ -47,7 +48,8 @@ class Cleaner
     public static function removeFile($file)
     {
         if (file_exists($file)) {
-            unlink($file);
+            if(!unlink($file))
+              throw new Exception('Невозможно удалить файл: ' . $file);
         }
     }
 }

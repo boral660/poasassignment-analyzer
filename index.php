@@ -204,6 +204,7 @@ class MoodleParser
             echo '<br>';
             if ($is_get_course === true) {
                 $this->parse($task_id);
+                Cleaner::removeDirectory('./'.$this->files_download_to);
                 $this->testAnswers();
                 if (!$this->save_answers) {
                     Cleaner::removeDirectory('./'.$this->files_download_to);
@@ -278,7 +279,9 @@ class MoodleParser
 		 $str = strlen($sdir) - $str;
 		 $otherdir = substr($sdir,0,$str*(-1));
 
-	  rename($sdir, $otherdir . $this->translit($dirname,true));
+        if(!rename($sdir, $otherdir . $this->translit($dirname,true)))
+             throw new Exception('Невозможно переименовать папку: ' . $sdir);
+ 
 	}
 	
 	   /**
@@ -293,8 +296,8 @@ class MoodleParser
 		$found = Tester::recursiveGlob($dir, "*.{c,cpp,h}");
 
 		foreach ($found as $file) {
-			rename($file, $this->translit($file,true));
-		
+            if(!rename($file, $this->translit($file,true)))
+              throw new Exception('Невозможно переименовать файл: ' . $file);
 		}
         return $found;
     }
@@ -578,10 +581,6 @@ class MoodleParser
                         if (!is_dir($dir.'/'.$course_name.'/'.$task_name.'/'.$name)) {
                             mkdir($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
                         }
-						else {
-							Cleaner::removeDirectory($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
-							 mkdir($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
-						}
                         $fp = fopen($dir.'/'.$course_name.'/'.$task_name.'/'.$name.'/'.$output_filename, 'w');
                         fwrite($fp, $result);
                         fclose($fp);
@@ -590,7 +589,9 @@ class MoodleParser
                         if ($this->unpack_answers) {
                             $this->unpackFile($file_path.'/'.$output_filename, $errors);
                         }
-						$this->translitAllFiles($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
+                   
+                        $this->translitAllFiles($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
+                    
                     }
 
                     if ($this->build_and_compile) {
@@ -600,6 +601,7 @@ class MoodleParser
                         }
                     }
                     echo '<br>';
+
                     Cleaner::clearDir($file_path);
                 }
             }
@@ -610,18 +612,20 @@ error_reporting(E_ALL & ~E_NOTICE);
 ob_start();
 try {
     $mp = new MoodleParser();
+    $is_auth = $mp->login();
+    echo $is_auth ? 'Авторизация успешна' : 'Авторизация провалена';
+    echo '<br>';
+    $my_html = '';
+    if ($is_auth === true) {
+        $mp->parseAllTask();
+    }
 } catch (Exception $e) {
     echo 'Выброшено исключение : ', $e->getMessage(), ' ';
-    Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
+    if ($mp->writeOnLog())
+     Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
     exit();
 }
-$is_auth = $mp->login();
-echo $is_auth ? 'Авторизация успешна' : 'Авторизация провалена';
-echo '<br>';
-$my_html = '';
-if ($is_auth === true) {
-    $mp->parseAllTask();
-}
+
 $my_html = ob_get_clean();
 if ($mp->writeOnLog()) {
     $logFile = Reporter::writeOnFile($my_html);
