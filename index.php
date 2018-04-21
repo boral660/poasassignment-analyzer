@@ -419,6 +419,9 @@ class MoodleParser
             if ($ini_array['generator_for_CMake'] !== null) {
                 Tester::setGeneratorForCMake($ini_array['generator_for_CMake']);
             }
+            if ($ini_array['main_builder'] !== null) {
+                Tester::setMainBuilder($ini_array['main_builder']);
+            }
 
             if ($ini_array['path_to_Make'] !== null) {
                 Tester::setMakePath($ini_array['path_to_Make']);
