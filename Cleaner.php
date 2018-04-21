@@ -33,7 +33,7 @@ class Cleaner
         if (is_dir($dir)) {
             if ($objs = glob($dir . "/*")) {
                 foreach ($objs as $obj) {
-                    is_dir($obj) ? Cleaner::removeDirectory($obj) : unlink($obj);
+                    is_dir($obj) ? Cleaner::removeDirectory($obj) : Cleaner::removeFile($obj);
                 }
             }
             if(!rmdir($dir))
