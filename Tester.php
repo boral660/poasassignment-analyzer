@@ -115,7 +115,7 @@ class Tester
      */
     public static function buildOnQT($path)
     {
-        $fileName =  __DIR__ . '/' . $path . '\\build\\project.pro';
+        $fileName =  __DIR__ . '/' . $path . '\\buildTemp\\project.pro';
 		if (Tester::$linux_client) {
             $comand = "qmake";
         } else {
@@ -141,10 +141,10 @@ class Tester
     {
         $result = 2;
         //Удаляем директорию
-        if (is_dir($path . '/build')) {
-           Cleaner::removeDirectory($path . '/build');
+        if (is_dir($path . '/buildTemp')) {
+           Cleaner::removeDirectory($path . '/buildTemp');
         }
-		mkdir($path . '/build');
+		mkdir($path . '/buildTemp');
         $qtfiles = Tester::recursiveGlob($path, '*.pro');
 		Tester::buildOnQT($path);
         // Если это не qt проект
@@ -158,7 +158,7 @@ class Tester
                 } else {
                     $comand = '"' .  Tester::$path_to_CMake . '\\cmake.exe" -G "' . Tester::$generator_for_CMake;
                 }
-                $comand .= '" -B"' . $path . '/build" -H"' . $path . '/build"' . ' 2> cmakeError.txt';
+                $comand .= '" -B"' . $path . '/buildTemp" -H"' . $path . '/buildTemp"' . ' 2> cmakeError.txt';
                 exec($comand, $error);
                 $result = 1;
 
@@ -202,7 +202,7 @@ class Tester
         }
         // Если файл не qt указываем откуда брать файлы
         if ($qt == 1) {
-            $comand .= ' --directory="' . $path . '/build"';
+            $comand .= ' --directory="' . $path . '/buildTemp"';
         }
 
         $comand .= ' > makeLog.txt 2> makeError.txt';
@@ -219,7 +219,7 @@ class Tester
      */
     private static function createCmakelist($path)
     {
-        $cmake_path   = $path . "/build/CMakeLists.txt";
+        $cmake_path   = $path . "/buildTemp/CMakeLists.txt";
 		
         $source_files = array_merge(Tester::recursiveGlob($path, '*.cpp'),Tester::recursiveGlob($path, '*.c'));
         if (!empty($source_files)) {
