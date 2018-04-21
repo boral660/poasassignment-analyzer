@@ -200,7 +200,7 @@ class MoodleParser
     {
         foreach ($this->task_id as $task_id) {
             $is_get_course = $this->goToCourseAnswers($task_id);
-            echo $is_get_course ? 'Course success' : 'Course failed';
+            echo $is_get_course ? 'Курс получен' : 'Курс получить не удалось';
             echo '<br>';
             if ($is_get_course === true) {
                 $this->parse($task_id);
@@ -444,10 +444,10 @@ class MoodleParser
             }
             $misOptions = $this->checkOptions();
             if (!empty($misOptions)) {
-                throw new Exception('To work, you need to install these options '.implode(',', $misOptions));
+                throw new Exception('Для работы необходимо установить следующие опции: '.implode(',', $misOptions));
             }
         } else {
-            throw new Exception('It is not possible to open the conf.ini file, or it is empty');
+            throw new Exception('Невозможно открыть файл conf.ini, или данный файл пустой');
         }
     }
     /**
@@ -522,7 +522,7 @@ class MoodleParser
                 $comand = '"'.$this->path_to_winrar.'" x -o+ "'.$file_path.'" "'.$path.'" 2> rarError.txt';
             }
             exec($comand, $error);
-            $header = '[Fail] Error during unpacking file: ';
+            $header = '[Fail] Ошибка при распаковке файла: ';
             Tester::readErrorOnFile('./rarError.txt', $header, $errors);
         }
     }
@@ -611,12 +611,12 @@ ob_start();
 try {
     $mp = new MoodleParser();
 } catch (Exception $e) {
-    echo '[Fail] Exception is thrown : ', $e->getMessage(), ' ';
-    Reporter::writeOnFile('[Fail] Exception is throw: '.$e->getMessage());
+    echo 'Выброшено исключение : ', $e->getMessage(), ' ';
+    Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
     exit();
 }
 $is_auth = $mp->login();
-echo $is_auth ? 'Login success' : 'Login failed';
+echo $is_auth ? 'Авторизация успешна' : 'Авторизация провалена';
 echo '<br>';
 $my_html = '';
 if ($is_auth === true) {
@@ -625,7 +625,7 @@ if ($is_auth === true) {
 $my_html = ob_get_clean();
 if ($mp->writeOnLog()) {
     $logFile = Reporter::writeOnFile($my_html);
-    echo 'Testing is completed, the result stored in the .log file';
+    echo 'Тестирование законченно, результат сохранен в .log файле';
 } else {
     echo $my_html;
 }

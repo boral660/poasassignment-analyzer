@@ -163,7 +163,7 @@ class Tester
                 $result = 1;
 
                 // Выводим ошибки
-                $header = "Error during build on cmake: ";
+                $header = "[Fail] Ошибка во время построения на cmake: ";
                 Tester::readErrorOnFile("./cmakeError.txt", $header, $errors);
             }
         } else {
@@ -179,7 +179,7 @@ class Tester
             }
             $result = 0;
             // Выводим ошибки
-            $header = "Error during build on qmake: ";
+            $header = "[Fail] Ошибка во время построения на qmake: ";
             Tester::readErrorOnFile("./qmakeError.txt", $header, $errors);
         }
 
@@ -208,7 +208,7 @@ class Tester
         $comand .= ' > makeLog.txt 2> makeError.txt';
         exec($comand, $error);
         // Вывести сообщение об ошибке
-        $header = "[Fail] Error during compilation with make: ";
+        $header = "[Fail] Ошибка во время компиляции: ";
         Tester::readErrorOnFile("./makeError.txt", $header, $errors);
     }
 	
@@ -306,11 +306,11 @@ class Tester
         if ($result != 2) {
             Tester::compileProject($file_path, $result, $errors);
 			 if (empty($errors)) {
-				echo "[Pass] Testing success";
+				echo "[Pass] Тестирование прошло успешно";
 			}
         }
         else {
-			echo "[Fail] Code files with extension .c or .cpp were not found";
+			echo "[Fail] Файлы с кодом расширения .c или .cpp не были найдены";
 		}
 
         foreach ($errors as $error) {
