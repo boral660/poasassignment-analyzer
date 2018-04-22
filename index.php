@@ -198,19 +198,19 @@ class MoodleParser
      */
     public function parseAllTask()
     {
+        Cleaner::removeDirectory('./'.$this->files_download_to);
         foreach ($this->task_id as $task_id) {
             $is_get_course = $this->goToCourseAnswers($task_id);
             echo $is_get_course ? 'Курс получен' : 'Курс получить не удалось';
             echo '<br>';
             if ($is_get_course === true) {
                 $this->parse($task_id);
-                Cleaner::removeDirectory('./'.$this->files_download_to);
                 $this->testAnswers();
-                if (!$this->save_answers) {
-                    Cleaner::removeDirectory('./'.$this->files_download_to);
-                }
             }
             echo '<br><br>';
+        }
+        if (!$this->save_answers) {
+            Cleaner::removeDirectory('./'.$this->files_download_to);
         }
     }
 
