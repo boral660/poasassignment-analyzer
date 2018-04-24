@@ -22,6 +22,9 @@ class Cleaner
         Cleaner::removeFile('./Makefile');
         Cleaner::removeFile('./Makefile.Debug');
         Cleaner::removeFile('./Makefile.Release');
+        Cleaner::removeFileOnMask("./",'*.cpp');
+        Cleaner::removeFileOnMask("./",'*.c');
+        Cleaner::removeFileOnMask("./",'*.h');
     }
 	
 	    /**
@@ -51,5 +54,18 @@ class Cleaner
             if(!unlink($file))
               throw new Exception('Невозможно удалить файл: ' . $file);
         }
+    }
+
+    /**
+     * Удаление файлов по расширению
+     * @param $file путь к файлу
+     * @param $mask расширение файлов
+     */
+    public static function removeFileOnMask($dir,$mask)
+    {
+        $found = glob($dir . $mask);
+        foreach ($found as $file)
+            Cleaner::removeFile($file);
+        
     }
 }
