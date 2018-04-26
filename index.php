@@ -199,6 +199,7 @@ class MoodleParser
     public function parseAllTask()
     {
         Cleaner::removeDirectory('./'.$this->files_download_to);
+        Cleaner::clearDir($file_path);
         foreach ($this->task_id as $task_id) {
             $is_get_course = $this->goToCourseAnswers($task_id);
             echo $is_get_course ? 'Курс получен' : 'Курс получить не удалось';
@@ -539,8 +540,11 @@ class MoodleParser
     public function testAnswers()
     {
         foreach ($this->links as $course_name => $course) {
+            $or_course_name =  $course_name;
             foreach ($course as $task_name => $task) {
+                $or_task_name =  $task_name;
                 foreach ($task as $name => $student) {
+                    $or_name =  $name;
                     if ($this->build_and_compile) {
                         echo '<h3>Тестирование работы по задаче '.$task_name.' студента '.$name.':</h3>';
                     }
@@ -600,7 +604,7 @@ class MoodleParser
                     if ($this->build_and_compile) {
                         Tester::testOnPath($file_path, $errors);
                         if (!empty($errors) && $this->write_on_comment) {
-                            Reporter::sendComment($errors, $this->links[$course_name][$task_name][$name]['grade'], $this->cookie_file);
+                            Reporter::sendComment($errors, $this->links[$or_course_name][$or_task_name][$or_name]['grade'], $this->cookie_file);
                         }
                     }
                     echo '<br>';
