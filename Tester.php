@@ -355,16 +355,23 @@ class Tester
      */
     public static function readErrorOnFile($path, $header_string, &$errors)
     {
-        $lines = file($path);
+        if (file_exists($path)) {
+            $lines = file($path);
+        } else {
+            $lines = array();
+        }
         if (!empty($lines)) {
             array_push($errors, $header_string);
         }
-        foreach ($lines as $line) {
-            if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
-                $line = iconv('WINDOWS-1251', 'UTF-8', $line);
+        if (count($lines)) {
+            foreach ($lines as $line) {
+                if (strtoupper(substr(PHP_OS, 0, 3)) === 'WIN') {
+                    $line = iconv('WINDOWS-1251', 'UTF-8', $line);
+                }
+                array_push($errors, $line);
             }
-            array_push($errors, $line);
         }
+        
         foreach ($errors as $key => $error) {
             if (stripos($error, 'RCC: Warning:')!==false) {
                 unset($errors[$key]);

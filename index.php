@@ -30,9 +30,9 @@ class MoodleParser
     private $write_on_comment = false;
 
     /**
-     * @var array следует ли записывать результат в лог, а не на экран
+     * @var sting куда следует записывать результат
      */
-    private $write_on_log = true;
+    private $write_on = 'console';
 
     /**
      * @var string путь к winRar
@@ -116,11 +116,11 @@ class MoodleParser
         return (preg_match('/page-login-index/', $data) !== 1) && (preg_match('/page-/', $data) === 1);
     }
     /**
-     * Позволяет получить информацию о том, следует ли записывать в лог файл.
+     * Позволяет получить информацию о том, какой вывод считать приорететным
      */
-    public function writeOnLog()
+    public function writeOn()
     {
-        return $this->write_on_log;
+        return $this->write_on;
     }
 
     /**
@@ -278,10 +278,11 @@ class MoodleParser
 		 $str = strripos($sdir, "\\") + 1;
 		 $dirname = substr($sdir,$str); 
 		 $str = strlen($sdir) - $str;
-		 $otherdir = substr($sdir,0,$str*(-1));
-
-        if(!rename($sdir, $otherdir . $this->translit($dirname,true)))
-             throw new Exception('Невозможно переименовать папку: ' . $sdir);
+		 $destDirectory = substr($sdir,0,$str*(-1)) . $this->translit($dirname,true);
+         if ($sdir != $destDirectory) {
+            if (!rename($sdir, $destDirectory))
+                throw new Exception('Невозможно переименовать папку: ' . $sdir);
+        }
  
 	}
 	
@@ -446,8 +447,13 @@ class MoodleParser
             if ($ini_array['write_on_comment'] !== null) {
                 $this->write_on_comment = $ini_array['write_on_comment'];
             }
-            if ($ini_array['write_on_log'] !== null) {
-                $this->write_on_log = $ini_array['write_on_log'];
+            if ($ini_array['write_on'] !== null) {
+                $this->write_on = $ini_array['write_on'];
+                if(strnatcasecmp($this->write_on, "console") != 0 &&
+                   strnatcasecmp($this->write_on, "log") != 0 && 
+                   strnatcasecmp($this->write_on, "browser") != 0) {
+                    throw new Exception('Установлен некорректный способ вывода, необходимо указать "browser" или "log" или "console"');
+                }
             }
             $misOptions = $this->checkOptions();
             if (!empty($misOptions)) {
@@ -628,20 +634,22 @@ try {
     }
 } catch (Exception $e) {
     echo 'Выброшено исключение : ', $e->getMessage(), ' ';
-    if ($mp->writeOnLog())
-     Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
+    if (strnatcasecmp($mp->writeOn(), "log") == 0)
+         Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
     exit();
 }
 
 $my_html = ob_get_clean();
-if ($mp->writeOnLog()) {
+if (strnatcasecmp($mp->writeOn(), "log") == 0) {
     $logFile = Reporter::writeOnFile($my_html);
     echo 'Тестирование законченно, результат сохранен в .log файле';
-} else {
+} else if (strnatcasecmp($mp->writeOn(), "console") == 0) {
+    echo strip_tags(Reporter::replaseTag($my_html));
+}else{
     echo $my_html;
 }
 if ($mp->getSendResultOnEmail()) {
-    if($mp->writeOnLog())
+    if(strnatcasecmp($mp->writeOn(), "log") == 0)
 		Reporter::sendMailWithFile($logFile, $mp->getEmail());
 	else
 		Reporter::sendMail($my_html, $mp->getEmail());

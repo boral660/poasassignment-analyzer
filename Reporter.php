@@ -103,7 +103,7 @@ class Reporter
      * Заменяет теги в коде
      * @param string[] текст
      */
-    private static function replaseTag($text)
+    public static function replaseTag($text)
     {
         $patterns = array();
         $patterns[0] = '<<br>>';
