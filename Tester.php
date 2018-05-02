@@ -130,11 +130,11 @@ class Tester
      */
     public static function makeProFile($path)
     {
-        $fileName =  __DIR__ . '/' . $path . '\\buildTemp\\project.pro';
+        $fileName =  __DIR__ . DIRECTORY_SEPARATOR . $path . DIRECTORY_SEPARATOR . 'buildTemp' . DIRECTORY_SEPARATOR .'project.pro';
         if (Tester::$linux_client) {
             $comand = "qmake";
         } else {
-            $comand = '"' .  Tester::$path_to_QMake . '\\qmake.exe"';
+            $comand = '"' .  Tester::$path_to_QMake . DIRECTORY_SEPARATOR . 'qmake.exe"';
         }
         $comand .= ' -project -nopwd "' . __DIR__ . '/' . $path . '" -o "'. $fileName .'"  2> qmakeError.txt';
         exec($comand, $error);
@@ -167,7 +167,7 @@ class Tester
             if (Tester::$linux_client) {
                 $comand = 'cmake  -G "' . Tester::$generator_for_CMake;
             } else {
-                $comand = '"' .  Tester::$path_to_CMake . '\\cmake.exe" -G "' . Tester::$generator_for_CMake;
+                $comand = '"' .  Tester::$path_to_CMake . DIRECTORY_SEPARATOR . 'cmake.exe" -G "' . Tester::$generator_for_CMake;
             }
             $comand .= '" -B"' . $path . '/buildTemp" -H"' . $path . '/buildTemp"' . ' 2> cmakeError.txt';
             exec($comand, $error);
@@ -200,11 +200,12 @@ class Tester
         Tester::makeProFile($path);
         // Получаем про файл
         $proFile = Tester::recursiveGlob($path . '/buildTemp', '*.pro');
+       echo $proFile;
         if (!empty($proFile)) {
             if (Tester::$linux_client) {
                 $comand = "qmake";
             } else {
-                $comand = '"' .  Tester::$path_to_QMake . '\\qmake.exe"';
+                $comand = '"' .  Tester::$path_to_QMake . DIRECTORY_SEPARATOR .'qmake.exe"';
             }
             $comand .= ' "' . __DIR__ . '/' . dirname($proFile[0]) . '" 2> qmakeError.txt';
             exec($comand, $error);
