@@ -650,10 +650,17 @@ try {
 	if ($is_auth === true) {
 		$mp->parseAllTask();
 	}
-} catch (Exception $e) {
-	echo 'Выброшено исключение : ', $e->getMessage(), ' ';
-	if (strnatcasecmp($mp->writeOn(), "log") == 0)
-		Reporter::writeOnFile('Выброшено исключение: '.$e->getMessage());
+} catch (Exception $e) {	
+	echo '<br>Выброшено исключение : ', $e->getMessage(), '<br>';
+	$my_html = ob_get_clean();
+	if (strnatcasecmp($mp->writeOn(), "console") == 0) {
+		echo strip_tags(Reporter::replaseTag($my_html));
+	} else if (strnatcasecmp($mp->writeOn(), "log") == 0) {
+		echo 'Тестирование закончилось неудачей, результат сохранен в .log файле';
+		Reporter::writeOnFile($my_html);
+	} else{
+		echo $my_html;
+	}
 	exit();
 }
 
