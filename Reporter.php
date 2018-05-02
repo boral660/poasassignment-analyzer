@@ -7,7 +7,28 @@ class Reporter
     /**
      * @var string путь к moodle
      */
-    private static $moodle_url = '';
+    private static $moodle_url;
+
+      /**
+     * @var string почта с которой отсылать письма
+     */
+    private static $send_from_email;
+
+     /**
+     * Установить moodle_url
+     */
+    public static function setFromEmail($email)
+    {
+        Reporter::$send_from_email = $email;
+    }
+
+    /**
+     * Установить moodle_url
+     */
+    public static function getFromEmail()
+    {
+        return Reporter::$send_from_email;
+    }
 
     /**
      * Установить moodle_url
@@ -21,7 +42,7 @@ class Reporter
     /**
      * Производит отправку сообщения с текстом на почту
      * @param string[] текст сообщения
-     * @param string адресс электронной почты
+     * @param string адрес электронной почты
      */
     public static function sendMail($text, $email)
     {
@@ -29,9 +50,8 @@ class Reporter
         $subject = "Автоматическое тестирование " . date("F j, Y, g:i a");
 
         $headers  = "Content-type: text/html;\r\n";
-        $headers .= "From: autotestermoodle@mail.ru\r\n";
-        $headers .= "Reply-To: autotestermoodle@mail.ru\r\n";
-
+        $headers .= "From: " . Reporter::$send_from_email . "\r\n";
+        $headers .= "Reply-To: " . Reporter::$send_from_email . "\r\n";
         mail($email, $subject, $text, $headers);
     }
 
@@ -51,8 +71,8 @@ class Reporter
 
         $headers = "MIME-Version: 1.0;\r\n";
         $headers .="Content-Type: multipart/mixed; boundary=\"$boundary\"\r\n";
-        $headers .= "From: autotestermoodle@mail.ru\r\n";
-        $headers .= "Reply-To: autotestermoodle@mail.ru\r\n";
+        $headers .= "From: " . Reporter::$send_from_email . "\r\n";
+        $headers .= "Reply-To: " . Reporter::$send_from_email . "\r\n";
 
         $multipart = "--$boundary\r\n";
         $multipart .= "Content-Type: text/html; charset=windows-1251\r\n";
@@ -122,7 +142,7 @@ class Reporter
     /**
      * Производит отправку сообщения в комментарий к задаче
      * @param string[] сообщения об ошибке
-     * @param string адресс сайта с комментарием
+     * @param string адрес сайта с комментарием
      */
     public static function sendComment($errors, $task, $cookie_file)
     {

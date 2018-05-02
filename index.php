@@ -107,7 +107,12 @@ class MoodleParser
 
 	public function __construct()
 	{
-		$this->init();
+		try {
+			$this->init();
+		} catch (Exception $e) {
+			echo 'Выброшено исключение : ', $e->getMessage(), '';
+			exit;
+		}
 	}
 
 	/**
@@ -455,6 +460,9 @@ class MoodleParser
 			if ($ini_array['send_result_on_email'] !== null) {
 				$this->send_result_on_email = $ini_array['send_result_on_email'];
 			}
+			if ($ini_array['send_from_email'] !== null) {
+				Reporter::setFromEmail($ini_array['send_from_email']);
+			}
 			if ($ini_array['grade_if_fail'] !== null) {
 				if($ini_array['grade_if_fail']<101 && $ini_array['grade_if_fail']>-1)
 					$this->grade_if_fail = $ini_array['grade_if_fail'];
@@ -506,6 +514,9 @@ class MoodleParser
 
 		if ($this->send_result_on_email == true && $this->email == null) {
 			array_push($params, 'email');
+		}
+		if ($this->send_result_on_email == true && Reporter::getFromEmail()== null) {
+			array_push($params, 'send_from_email');
 		}
 
 		if ($this->unpack_answers == true && $this->path_to_winrar == null) {
