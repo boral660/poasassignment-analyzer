@@ -204,7 +204,7 @@ class MoodleParser
      */
 	public function parseAllTask()
 	{
-		Cleaner::removeDirectory('./'.$this->files_download_to);
+		Cleaner::removeDirectory('.'. DIRECTORY_SEPARATOR .$this->files_download_to);
 		Cleaner::clearDir($file_path);
 		foreach ($this->task_id as $task_id) {
 			$is_get_course = $this->goToCourseAnswers($task_id);
@@ -217,7 +217,7 @@ class MoodleParser
 			echo '<br><br>';
 		}
 		if (!$this->save_answers) {
-			Cleaner::removeDirectory('./'.$this->files_download_to);
+			Cleaner::removeDirectory('.'. DIRECTORY_SEPARATOR .$this->files_download_to);
 		}
 	}
 
@@ -268,30 +268,35 @@ class MoodleParser
 			return str_replace($lat, $rus, $str);
 		}
 	}
-	/**
+/**
      * Выполняет перевод в транслит названия всех папок
      *
      * @param $sdir - папка с в которой необходимо рекурсивно провести операцию
+     * @throws \Exception если не удалось переименовать
      */
 	public function translitAllDir($sdir)
 	{
-		$sdir = str_replace('/', '\\', $sdir);
-
+		if ($this->linux_client) {
+			$sdir = str_replace('\\', '/', $sdir);
+		} else {
+			$sdir = str_replace('/', '\\', $sdir);
+		}
+	
 		$dirs  = glob($sdir . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
 		foreach ($dirs as $dir) {
 			$this->translitAllDir($dir);
 		}
-		$str = strripos($sdir, "\\") + 1;
-		$dirname = substr($sdir,$str); 
+		$str = strripos($sdir, DIRECTORY_SEPARATOR) + 1;
+		/** @var string $dirname */
+		$dirname = substr($sdir,$str);
 		$str = strlen($sdir) - $str;
 		$destDirectory = substr($sdir,0,$str*(-1)) . $this->translit($dirname,true);
+	
 		if ($sdir != $destDirectory) {
 			if (!rename($sdir, $destDirectory))
 				throw new Exception('Невозможно переименовать папку: ' . $sdir);
 		}
-
 	}
-
 	/**
      * Выполняет перевод в транслит названия всех файлов в папке
      *
@@ -539,7 +544,7 @@ class MoodleParser
 		$errors = array();
 		$file_ext = strrchr($file_path, '.');
 		if ($file_ext == '.rar' || $file_ext == '.zip' || $file_ext == '.tar' || $file_ext == '.gz' || $file_ext == '.bz2' || $file_ext == '.7z' || $file_ext == '.z') {
-			$name = strrchr($file_path, '/');
+			$name = strrchr($file_path, DIRECTORY_SEPARATOR);
 			$path = substr($file_path, 0, strlen($file_path) - strlen($name) + 1);
 			if ($this->linux_client) {
 				$comand = 'unrar x -o+ "'.$file_path.'" "'.$path.'"';
@@ -595,27 +600,27 @@ class MoodleParser
 							mkdir($dir);
 						}
 
-						if (!is_dir($dir.'/'.$course_name)) {
-							mkdir($dir.'/'.$course_name);
+						if (!is_dir($dir.DIRECTORY_SEPARATOR.$course_name)) {
+							mkdir($dir.DIRECTORY_SEPARATOR.$course_name);
 						}
 
-						if (!is_dir($dir.'/'.$course_name.'/'.$task_name)) {
-							mkdir($dir.'/'.$course_name.'/'.$task_name);
+						if (!is_dir($dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name)) {
+							mkdir($dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name);
 						}
 
-						if (!is_dir($dir.'/'.$course_name.'/'.$task_name.'/'.$name)) {
-							mkdir($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
+						if (!is_dir($dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name.DIRECTORY_SEPARATOR.$name)) {
+							mkdir($dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name.DIRECTORY_SEPARATOR.$name);
 						}
-						$fp = fopen($dir.'/'.$course_name.'/'.$task_name.'/'.$name.'/'.$output_filename, 'w');
+						$fp = fopen($dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name.DIRECTORY_SEPARATOR.$name.DIRECTORY_SEPARATOR.$output_filename, 'w');
 						fwrite($fp, $result);
 						fclose($fp);
 						$errors = array();
-						$file_path = $dir.'/'.$course_name.'/'.$task_name.'/'.$name;
+						$file_path = $dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name.DIRECTORY_SEPARATOR.$name;
 						if ($this->unpack_answers) {
-							$this->unpackFile($file_path.'/'.$output_filename, $errors);
+							$this->unpackFile($file_path.DIRECTORY_SEPARATOR.$output_filename, $errors);
 						}
 
-						$this->translitAllFiles($dir.'/'.$course_name.'/'.$task_name.'/'.$name);
+						$this->translitAllFiles($dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name.DIRECTORY_SEPARATOR.$name);
 
 					}
 
