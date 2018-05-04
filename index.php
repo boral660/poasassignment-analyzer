@@ -16,6 +16,11 @@ class MoodleParser
 	private $answers_html = '';
 
 	/**
+     * @var string разметка страницы с протоколами
+     */
+	private $protocols_html = '';
+
+	/**
      * @var array список курсов, заданий и студентов с ответами для проверки
      */
 	private $links = array();
@@ -54,6 +59,16 @@ class MoodleParser
      * @var array номера заданий, которые необходимо проверить
      */
 	private $task_id = array();
+
+	/**
+     * @var string страница c протоколами
+     */
+	private $protocol_url = '';
+
+	/**
+     * @var array номера заданий для которых необходимо проверить наличие протоколов
+     */
+	private $protocol_id = array();
 
 	/**
      * @var string путь к файлу куки
@@ -162,6 +177,18 @@ class MoodleParser
 	}
 
 	/**
+     * Определяет, удалось ли получить страницу с протоколами
+     *
+     * @param $data HTML страницы с протоколами
+     *
+     * @return bool удалось ли получить страницу с протоколами
+     */
+	public function isGetCourseProtocol($data)
+	{
+		return preg_match('/page-mod-assign-grading/', $data) === 1;
+	}
+
+	/**
      * Возвращает разметку страницы с ответами.
      *
      * @return string
@@ -221,11 +248,52 @@ class MoodleParser
 			}
 			echo '<br><br>';
 		}
+		foreach ($this->protocol_id as $protocol_id) {
+			$is_get_course = $this->goToCourseProtocols($protocol_id);
+			echo $is_get_course ? 'Курс получен' : 'Курс получить не удалось';
+			echo '<br>';
+			if ($is_get_course === true) {
+				$this->parseProtocols($protocol_id);
+				//$this->testAnswers();
+			}
+			echo '<br><br>';
+		}
 		if (!$this->save_answers) {
 			Cleaner::removeDirectory('.'. DIRECTORY_SEPARATOR .$this->files_download_to);
 		}
 	}
 
+	
+	/**
+     * Выполняет переход на страницу с протоколами.
+     *
+     * @param $protocol_id идентификатор задания для которого необходимо проверить протокол
+     *
+     * @return bool удалось ли перейти на страницу с ответами
+     */
+	public function goToCourseProtocols($protocol_id)
+	{
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, "{$this->protocol_url}{$protocol_id}&action=grading"); // отправляем на
+		curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
+		curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // таймаут
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
+		curl_setopt($ch, CURLOPT_COOKIEJAR, $this->cookie_file); // сохранять куки в файл
+		curl_setopt($ch, CURLOPT_COOKIEFILE, $this->cookie_file);
+
+		$stderr = fopen('curl.log', 'a');
+		curl_setopt($ch, CURLOPT_VERBOSE, true);
+		curl_setopt($ch, CURLOPT_STDERR, $stderr);
+
+		$ex = curl_exec($ch);
+		$is_get_course =$this->isGetCourseProtocol($this->protocols_html = $ex);
+		curl_close($ch);
+		fclose($stderr);
+
+		return $is_get_course;
+	}
 	/**
      * Выполняет переход на страницу с ответами.
      *
@@ -319,7 +387,72 @@ class MoodleParser
 		}
 		return $found;
 	}
+	/**
+     * Выполняет парсинг страницы с протоколами
+     *
+     * @param $protocol_id идентификатор для парсинга
+     */
+	public function parseProtocols($protocol_id)
+	{
+		$dom = new DOMDocument();
+		@$dom->loadHTML($this->protocols_html);
+		$xpath = new DOMXPath($dom);
+		$this->links = array();
+		$row_index = -1;
+		$name = null;
+		$task = null;
+		
+		$task_name = $xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue;
+	 	$course_name = $xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue;
+		
+		$this->links[$course_name] = array();
+		$this->links[$course_name][$task_id] = array();
 
+		$pos = strripos($this->protocol_url, '/');
+		$moodle_url = substr($this->protocol_url, 0, $pos + 1);
+		while ($row_index < 200) {
+			++$row_index;
+			$task = $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c4"]/div')->item(0);
+			if ($task !== null) {
+				$name = $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c2"]/a')->item(0);
+				$student_name = $name->nodeValue;
+				$this->links[$course_name][$task_id][$student_name] = array();
+				$this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
+				$this->links[$course_name][$task_id][$student_name]['grade'] = $moodle_url.$task->getAttribute('href');
+				$this->links[$course_name][$task_id][$student_name]['answers'] = array();
+				$task_index = 0;
+				while (true) {
+					if ($xpath->query('.//*[@id="mod_assign_grading_r'.$row_index.'_c8"]//@href')->item($task_index) !== null) {
+						$this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_link'] = $xpath->query('.//*[@id="mod_assign_grading_r'.$row_index.'_c8"]//@href')->item($task_index)->nodeValue; // ссылка на ответ
+						$this->links[$course_name][$task_id][$student_name]['answers'][$task_index]['answer_name'] = $this->translit($xpath->query('.//*[@id="mod_assign_grading_r' .$row_index.'_c8"]//text()')->item($task_index * 2)->nodeValue, true); // наименование ответа
+						++$task_index;
+					} else {
+						break;
+					}
+				}
+			}
+			$name = null;
+			$task = null;
+		}
+
+		$students_count = count($this->links[$course_name][$task_id]);
+		echo "<h3>Протоколы {$task_name}  ";
+		echo " в курсе  {$course_name}:</h3>";
+		foreach ($this->links[$course_name][$task_id] as $key => $value) {
+			if($value['answers'] != null ){
+				echo '<p><a href="'.$value['profile'].'">'.$key.'</a> предоставил для проверки ';
+
+				foreach ($value['answers'] as $answer) {
+					echo '<a href="'.$answer['answer_link'].'">'.$answer['answer_name'].'</a> ';
+				}
+
+				echo '</p>';
+			} else {
+				echo '<p><a href="'.$value['profile'].'">'.$key.'</a> не предоставил протокол для проверки ';
+			}
+		}
+		echo '<br>';
+	}
 	/**
      * Выполняет парсинг страницы с ответами.
      *
@@ -413,6 +546,13 @@ class MoodleParser
 
 			if ($ini_array['task_id'] !== null) {
 				$this->task_id = $ini_array['task_id'];
+			}
+			if ($ini_array['protocol_url'] !== null) {
+				$this->protocol_url = $ini_array['protocol_url'];
+			}
+
+			if ($ini_array['protocol_id'] !== null) {
+				$this->protocol_id = $ini_array['protocol_id'];
 			}
 
 			if ($ini_array['cookie_file'] !== null) {
@@ -508,8 +648,12 @@ class MoodleParser
 			array_push($params, 'login_url');
 		}
 
-		if ($this->task_url == null) {
-			array_push($params, 'task_url');
+		if ($this->task_url == null && $this->protocol_url == null) {
+			if($this->task_url == null)
+				array_push($params, 'task_url');
+				
+			if($this->$this->protocol_url == null)
+				array_push($params, 'protocol_url');
 		}
 
 		if ($this->send_result_on_email == true && $this->email == null) {
