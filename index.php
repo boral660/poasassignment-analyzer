@@ -418,8 +418,10 @@ class MoodleParser
 				$student_name = $name->nodeValue;
 				$this->links[$course_name][$task_id][$student_name] = array();
 				$this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
-				$this->links[$course_name][$task_id][$student_name]['grade'] = $moodle_url.$task->getAttribute('href');
+				$this->links[$course_name][$task_id][$student_name]['grade'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c5"]//@href')->item(0);
 				$this->links[$course_name][$task_id][$student_name]['answers'] = array();
+				$this->links[$course_name][$task_id][$student_name]['lastModified'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c7"]')->item(0)->nodeValue;
+				$this->links[$course_name][$task_id][$student_name]['lastGrade'] = $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c10"]')->item(0)->nodeValue;
 				$task_index = 0;
 				while (true) {
 					if ($xpath->query('.//*[@id="mod_assign_grading_r'.$row_index.'_c8"]//@href')->item($task_index) !== null) {
@@ -430,6 +432,7 @@ class MoodleParser
 						break;
 					}
 				}
+			//	Reporter::arrayForGradeProtocol($this->links[$course_name][$task_id][$student_name]['grade']->nodeValue,15,$this->cookie_file);
 			}
 			$name = null;
 			$task = null;
@@ -445,6 +448,7 @@ class MoodleParser
 				foreach ($value['answers'] as $answer) {
 					echo '<a href="'.$answer['answer_link'].'">'.$answer['answer_name'].'</a> ';
 				}
+				echo '<br>Дата последней загрузки: '. $value['lastModified'] .' <br>Дата последней оценки: '.  $value['lastGrade'] ;
 
 				echo '</p>';
 			} else {
@@ -452,6 +456,7 @@ class MoodleParser
 			}
 		}
 		echo '<br>';
+		
 	}
 	/**
      * Выполняет парсинг страницы с ответами.
@@ -651,7 +656,7 @@ class MoodleParser
 		if ($this->task_url == null && $this->protocol_url == null) {
 			if($this->task_url == null)
 				array_push($params, 'task_url');
-				
+
 			if($this->$this->protocol_url == null)
 				array_push($params, 'protocol_url');
 		}
