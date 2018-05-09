@@ -432,7 +432,7 @@ class MoodleParser
 						break;
 					}
 				}
-			//	Reporter::arrayForGradeProtocol($this->links[$course_name][$task_id][$student_name]['grade']->nodeValue,15,$this->cookie_file);
+				Reporter::grageProtocol("{$this->protocol_url}{$protocol_id}&action=grading",15,$this->cookie_file);
 			}
 			$name = null;
 			$task = null;
@@ -707,7 +707,35 @@ class MoodleParser
 			$name = strrchr($file_path, DIRECTORY_SEPARATOR);
 			$path = substr($file_path, 0, strlen($file_path) - strlen($name) + 1);
 			if ($this->linux_client) {
-				$comand = 'unrar x -o+ "'.$file_path.'" "'.$path.'"';
+				switch ($file_ext){
+					case '.rar':
+						$comand = 'unrar x -o+ "'.$file_path.'" "'.$path.'"';
+						break;
+
+					case '.zip':
+						$comand = 'unzip x -o+ "'.$file_path.'" "'.$path.'"';
+						break;
+
+					case '.tar':
+						$comand = 'tar x -o+ "'.$file_path.'" "'.$path.'"';
+						break;
+
+					case '.gz':
+						$comand = 'tar x -o+ "'.$file_path.'" "'.$path.'"';
+						break;
+
+					case '.bz2':
+						$comand = 'tar x -o+ "'.$file_path.'" "'.$path.'"';
+						break;
+
+					case '.7z':
+						$comand = '7z x -o+ "'.$file_path.'" "'.$path.'"';
+						break;
+
+					case '.z':
+						$comand = 'uncompress x -o+ "'.$file_path.'" "'.$path.'"';
+						break;
+				}		
 			} else {
 				$comand = '"'.$this->path_to_winrar.'" x -o+ "'.$file_path.'" "'.$path.'" 2> rarError.txt';
 			}
