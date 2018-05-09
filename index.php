@@ -713,7 +713,7 @@ class MoodleParser
 						break;
 
 					case '.zip':
-						$comand = 'unzip x -o+ "'.$file_path.'" "'.$path.'"';
+						$comand = 'unzip "'.$file_path.'" -d "'.$path.'"';
 						break;
 
 					case '.tar':
