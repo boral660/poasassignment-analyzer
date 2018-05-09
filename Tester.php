@@ -200,7 +200,6 @@ class Tester
         Tester::makeProFile($path);
         // Получаем про файл
         $proFile = Tester::recursiveGlob($path . '/buildTemp', '*.pro');
-       echo $proFile;
         if (!empty($proFile)) {
             if (Tester::$linux_client) {
                 $comand = "qmake";

@@ -82,7 +82,7 @@ class Reporter
         // Закачиваем файл
         $fp = fopen($filepath, "r");
         if (!$fp) {
-            print "Не удается открыть файл22";
+            echo "Не удается открыть файл";
             exit();
         }
         $file = fread($fp, filesize($filepath));
@@ -147,7 +147,7 @@ class Reporter
     public static function sendComment($errors, $task, $cookie_file)
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL,  Reporter::$moodle_url . "comment/comment_ajax.php"); // отправляем наззззззззззззззззззззззззззззззззззззззззззззз
+        curl_setopt($ch, CURLOPT_URL,  Reporter::$moodle_url . "comment/comment_ajax.php"); 
         curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами

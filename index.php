@@ -432,7 +432,6 @@ class MoodleParser
 						break;
 					}
 				}
-				Reporter::grageProtocol("{$this->protocol_url}{$protocol_id}&action=grading",15,$this->cookie_file);
 			}
 			$name = null;
 			$task = null;
