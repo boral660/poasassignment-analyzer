@@ -703,7 +703,7 @@ class MoodleParser
 	{
 		$errors = array();
 		$file_ext = strrchr($file_path, '.');
-		if ($file_ext == '.rar' || $file_ext == '.zip' || $file_ext == '.tar' || $file_ext == '.gz' || $file_ext == '.bz2' || $file_ext == '.7z' || $file_ext == '.z') {
+		if ($file_ext == '.rar' || $file_ext == '.zip' || $file_ext == '.tar' || $file_ext == '.gz' || $file_ext == '.bz2' || $file_ext == '.7z') {
 			$name = strrchr($file_path, DIRECTORY_SEPARATOR);
 			$path = substr($file_path, 0, strlen($file_path) - strlen($name) + 1);
 			if ($this->linux_client) {
@@ -717,23 +717,19 @@ class MoodleParser
 						break;
 
 					case '.tar':
-						$comand = 'tar x -o+ "'.$file_path.'" "'.$path.'"';
+						$comand = 'tar xf "'.$file_path.'" "'.$path.'"';
 						break;
 
 					case '.gz':
-						$comand = 'tar x -o+ "'.$file_path.'" "'.$path.'"';
+						$comand = 'tar zxf "'.$file_path.'" -C "'.$path.'"';
 						break;
 
 					case '.bz2':
-						$comand = 'tar x -o+ "'.$file_path.'" "'.$path.'"';
+						$comand = 'tar jxf "'.$file_path.'" -C "'.$path.'"';
 						break;
 
 					case '.7z':
-						$comand = '7z x -o+ "'.$file_path.'" "'.$path.'"';
-						break;
-
-					case '.z':
-						$comand = 'uncompress x -o+ "'.$file_path.'" "'.$path.'"';
+						$comand = '7z e "'.$file_path.'" -o"'.$path.'"';
 						break;
 				}		
 			} else {
