@@ -829,6 +829,7 @@ class MoodleParser
 }
 error_reporting(E_ALL & ~E_NOTICE);
 ob_start();
+$succes_test=true;
 try {
 	$mp = new MoodleParser();
 	$is_auth = $mp->login();
@@ -852,7 +853,7 @@ try {
 	exit();
 }
 
-$my_html = ob_get_clean();
+	$my_html = ob_get_clean();
 if (strnatcasecmp($mp->writeOn(), "log") == 0) {
 	$logFile = Reporter::writeOnFile($my_html);
 	echo 'Тестирование законченно, результат сохранен в .log файле';
@@ -862,8 +863,7 @@ if (strnatcasecmp($mp->writeOn(), "log") == 0) {
 	echo $my_html;
 }
 if ($mp->getSendResultOnEmail()) {
-	if(strnatcasecmp($mp->writeOn(), "log") == 0)
-		Reporter::sendMailWithFile($logFile, $mp->getEmail());
-	else
-		Reporter::sendMail($my_html, $mp->getEmail());
+	if($logFile == null)
+		$logFile = Reporter::writeOnFile($my_html);
+	Reporter::sendMailWithFile($logFile, $mp->getEmail());
 }
