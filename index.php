@@ -788,8 +788,11 @@ class MoodleParser
 					}
 					foreach ($student['answers'] as $answer) {
 						$name =  $this->translit($name,true);
+                        $name = preg_replace("/[^\p{L}\d,\.\s-_]/u",'_',$name);
 						$course_name =  $this->translit($course_name,true);
+                        $course_name = preg_replace("/[^\p{L}\d,\.\s-_]/u",'_',$course_name);
 						$task_name =  $this->translit($task_name,true);
+                        $task_name = preg_replace("/[^\p{L}\d,\.\s-_]/u",'_',$task_name);
 
 						$host = $answer['answer_link'];
 						$output_filename = $answer['answer_name'];
