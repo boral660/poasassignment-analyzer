@@ -1,6 +1,4 @@
 <?php
-
-
 include_once 'Cleaner.php';
 include_once 'Tester.php';
 include_once 'Reporter.php';
@@ -263,7 +261,7 @@ class MoodleParser
 		}
 	}
 
-	
+
 	/**
      * Выполняет переход на страницу с протоколами.
      *
@@ -341,7 +339,7 @@ class MoodleParser
 			return str_replace($lat, $rus, $str);
 		}
 	}
-/**
+	/**
      * Выполняет перевод в транслит названия всех папок
      *
      * @param $sdir - папка с в которой необходимо рекурсивно провести операцию
@@ -354,7 +352,7 @@ class MoodleParser
 		} else {
 			$sdir = str_replace('/', '\\', $sdir);
 		}
-	
+
 		$dirs  = glob($sdir . DIRECTORY_SEPARATOR . "*", GLOB_ONLYDIR);
 		foreach ($dirs as $dir) {
 			$this->translitAllDir($dir);
@@ -364,7 +362,7 @@ class MoodleParser
 		$dirname = substr($sdir,$str);
 		$str = strlen($sdir) - $str;
 		$destDirectory = substr($sdir,0,$str*(-1)) . $this->translit($dirname,true);
-	
+
 		if ($sdir != $destDirectory) {
 			if (!rename($sdir, $destDirectory))
 				throw new Exception('Невозможно переименовать папку: ' . $sdir);
@@ -401,10 +399,10 @@ class MoodleParser
 		$row_index = -1;
 		$name = null;
 		$task = null;
-		
+
 		$task_name = $xpath->query('//*[@id="region-main"]//h2/text()')->item(0)->nodeValue;
-	 	$course_name = $xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue;
-		
+		$course_name = $xpath->query('//*[@class="page-header-headings"]/h1')->item(0)->nodeValue;
+
 		$this->links[$course_name] = array();
 		$this->links[$course_name][$task_id] = array();
 
@@ -418,7 +416,7 @@ class MoodleParser
 				$student_name = $name->nodeValue;
 				$this->links[$course_name][$task_id][$student_name] = array();
 				$this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
-				$this->links[$course_name][$task_id][$student_name]['grade'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c5"]//@href')->item(0);
+				$this->links[$course_name][$task_id][$student_name]['grade'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c5"]//@href')->item(0)->nodeValue;
 				$this->links[$course_name][$task_id][$student_name]['answers'] = array();
 				$this->links[$course_name][$task_id][$student_name]['lastModified'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c7"]')->item(0)->nodeValue;
 				$this->links[$course_name][$task_id][$student_name]['lastGrade'] = $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c10"]')->item(0)->nodeValue;
@@ -432,6 +430,8 @@ class MoodleParser
 						break;
 					}
 				}
+				if($xpath->query('.//*[@id="mod_assign_grading_r'.$row_index.'_c8"]//@href')->item(0) == null)
+					Reporter::grageProtocol("{$this->protocol_url}{$protocol_id}$action=grading",$this->links[$course_name][$task_id][$student_name]['grade'],$this->grade_if_fail,$this->cookie_file);
 			}
 			$name = null;
 			$task = null;
@@ -455,7 +455,7 @@ class MoodleParser
 			}
 		}
 		echo '<br>';
-		
+
 	}
 	/**
      * Выполняет парсинг страницы с ответами.
@@ -853,7 +853,7 @@ try {
 	exit();
 }
 
-	$my_html = ob_get_clean();
+$my_html = ob_get_clean();
 if (strnatcasecmp($mp->writeOn(), "log") == 0) {
 	$logFile = Reporter::writeOnFile($my_html);
 	echo 'Тестирование законченно, результат сохранен в .log файле';

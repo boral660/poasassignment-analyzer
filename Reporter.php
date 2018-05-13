@@ -1,5 +1,5 @@
 <?php
-	/**
+/**
  * Class Reporter клаcc выполняющий отправку результатов тестирования
  */
 class Reporter
@@ -9,12 +9,12 @@ class Reporter
      */
     private static $moodle_url;
 
-      /**
+    /**
      * @var string почта с которой отсылать письма
      */
     private static $send_from_email;
 
-     /**
+    /**
      * Установить moodle_url
      */
     public static function setFromEmail($email)
@@ -147,7 +147,7 @@ class Reporter
     public static function sendComment($errors, $task, $cookie_file)
     {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL,  Reporter::$moodle_url . "comment/comment_ajax.php"); 
+        curl_setopt($ch, CURLOPT_URL,  Reporter::$moodle_url . "comment/comment_ajax.php");
         curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
@@ -192,6 +192,120 @@ class Reporter
         curl_close($ch);
         fclose($stderr);
     }
+    /**
+     * Парсит страницу, для того что бы проставить оценку за протокол
+          * @param string $task - адрес со всеми ответами
+     * @param string $taskGrade - адрес, где следует проставить оценку
+     * @param int   $grage - оценка
+     */
+    public static function arrayForGradeProtocol($task, $taskGrade, $grade, $cookie_file)
+    {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $taskGrade); // отправляем на
+        curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // таймаут
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file); // сохранять куки в файл
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file);
+        $stderr = fopen("curl.log", "a");
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_STDERR, $stderr);
+
+        $ex            = curl_exec($ch);
+        $taskhtml = $ex;
+        curl_close($ch);
+        fclose($stderr);
+
+        $result = array();
+
+        // Парсим html
+        $dom = new DOMDocument();
+        @$dom->loadHTML($taskhtml);
+        $xpath       = new DOMXPath($dom);
+        $result = array();
+
+        Reporter::sesskeyForProtocol($task, $cookie_file, $result);
+
+        $result['assignmentid'] = $xpath->query('//*[@data-region="user-info"]')->item(0)->attributes->item(2)->nodeValue;
+        $result['userid'] = $xpath->query('//*[@data-region="grading-navigation-panel"]')->item(0)->attributes->item(1)->nodeValue;
+
+        $result['editpdf_source_userid'] = 0;
+
+        return($result);
+    }
+    /**
+     * Парсит страницу, для того что бы получить sesskey
+     * @param string $task - адрес, где следует проставить оценку
+     * @param int   $grage - оценка
+     */
+    public static function sesskeyForProtocol($task, $cookie_file, &$result)
+    {
+        // Получаем страницу для парсинга
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $task); // отправляем на
+        curl_setopt($ch, CURLOPT_HEADER, 0); // пустые заголовки
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // таймаут
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file); // сохранять куки в файл
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file);
+        $stderr = fopen("curl.log", "a");
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_STDERR, $stderr);
+
+        $ex            = curl_exec($ch);
+        $taskhtml = $ex;
+        curl_close($ch);
+        fclose($stderr);
+
+        // Парсим html
+        $dom = new DOMDocument();
+        @$dom->loadHTML($taskhtml);
+        $xpath       = new DOMXPath($dom);
+
+        $temp=$xpath->query('//*[@data-title="logout,moodle"]')->item(0)->attributes->item(0)->nodeValue;
+        $parts = parse_url($temp);
+        parse_str($parts['query'], $query);
+        $result['sesskey'] = $query['sesskey'];
+    }
+    /**
+     * Парсит страницу, для того что бы проставить оценку за протокол
+     * @param string $task - адрес со всеми ответами
+     * @param string $taskGrade - адрес, где следует проставить оценку
+     * @param int   $grage - оценка
+     */
+    public static function grageProtocol($task, $taskGrade, $grade, $cookie_file)
+    {
+        $ch = curl_init();
+        $ar=Reporter::arrayForGradeProtocol($task, $taskGrade, $grade, $cookie_file);
+        $json_string='[{"index":0,"methodname":"mod_assign_submit_grading_form","args":{"assignmentid":"'. $ar['assignmentid'] .'","userid":'. $ar['userid'] .',"jsonformdata":"\"editpdf_source_userid='. $ar['editpdf_source_userid'] .'&id='. $ar['id'] .'&rownum=0&useridlistid=&attemptnumber=-1&ajax=0&userid=0&sendstudentnotifications=true&action=submitgrade&sesskey=' . $ar['sesskey'] .'&_qf__mod_assign_grade_form_'.$ar['userid'].'=1&grade='.$grade.'&assignfeedbackcomments_editor%5Btext%5D=&assignfeedbackcomments_editor%5Bformat%5D=1&assignfeedback_editpdf_haschanges=false\""}}]';
+        $url = Reporter::$moodle_url . 'lib/ajax/service.php?sesskey=' . $ar['sesskey'] .'&info=mod_assign_submit_grading_form';
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $json_string);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, array(
+            'Content-Type: application/json',
+            'Content-Length: ' . strlen($json_string))
+                   );
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1); // возвратить то что вернул сервер
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1); // следовать за редиректами
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 30); // таймаут
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // просто отключаем проверку сертификата
+        curl_setopt($ch, CURLOPT_COOKIEJAR, $cookie_file); // сохранять куки в файл
+        curl_setopt($ch, CURLOPT_COOKIEFILE, $cookie_file);
+        curl_setopt($ch, CURLOPT_POST, 1); // использовать данные в post
+        $stderr = fopen("curl.log", "a");
+        curl_setopt($ch, CURLOPT_VERBOSE, true);
+        curl_setopt($ch, CURLOPT_STDERR, $stderr);
+
+        $ex            = curl_exec($ch);
+        $taskhtml = $ex;
+        curl_close($ch);
+        fclose($stderr);
+    }
+
 
     /**
      * Парсит страницу, для того что бы проставить оценку за проект
@@ -243,13 +357,6 @@ class Reporter
         $result['submitbutton'] = "Save changes";
 
         return($result);
-
-
-        /*     id: 21
-       poasassignmentid: 3
-       assigneeid: 9
-       page: grade
-         */
     }
     /**
      * Парсит страницу, для того что бы получить данные для запроса отправки комментов
