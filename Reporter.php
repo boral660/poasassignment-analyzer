@@ -118,6 +118,19 @@ class Reporter
         fclose($fp);
         return $fileName;
     }
+      /**
+     * Записывает в файл с датами загрузки
+     * @param string строка в формате json
+     * @return возращает путь к файлу
+     */
+    public static function writeTimeOnFile($str)
+    {
+        $fileName = "TestingTime.json";
+        $fp = fopen($fileName, "w");
+        fwrite($fp, $str);
+        fclose($fp);
+        return $fileName;
+    }
 
 
     /**

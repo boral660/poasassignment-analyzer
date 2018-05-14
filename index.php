@@ -24,6 +24,11 @@ class MoodleParser
 	private $links = array();
 
 	/**
+     * @var array список с временем загрузки работ студентов
+     */
+	private $test_time = array();
+
+	/**
      * @var array следует ли отослать результат проверки на email
      */
 	private $send_result_on_email = false;
@@ -32,6 +37,11 @@ class MoodleParser
      * @var array следует ли отослать результат в комментарии
      */
 	private $write_on_comment = false;
+
+	/**
+     * @var array следует ли проверять только новые работы
+     */
+	private $check_only_new_work = false;
 
 	/**
      * @var sting куда следует записывать результат
@@ -122,6 +132,7 @@ class MoodleParser
 	{
 		try {
 			$this->init();
+			$this->initTestTime();
 		} catch (Exception $e) {
 			echo 'Выброшено исключение : ', $e->getMessage(), '';
 			exit;
@@ -147,6 +158,13 @@ class MoodleParser
 		return $this->write_on;
 	}
 
+	/**
+     * Позволяет получить информацию о времени нестирования
+     */
+	public function testTime()
+	{
+		return $this->test_time;
+	}
 	/**
      * Позволяет получить email указанный в файле.
      */
@@ -418,7 +436,6 @@ class MoodleParser
 				$this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
 				$this->links[$course_name][$task_id][$student_name]['grade'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c5"]//@href')->item(0)->nodeValue;
 				$this->links[$course_name][$task_id][$student_name]['answers'] = array();
-				$this->links[$course_name][$task_id][$student_name]['lastModified'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c7"]')->item(0)->nodeValue;
 				$this->links[$course_name][$task_id][$student_name]['lastGrade'] = $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c10"]')->item(0)->nodeValue;
 				$task_index = 0;
 				while (true) {
@@ -490,6 +507,7 @@ class MoodleParser
 				$this->links[$course_name][$task_id][$student_name]['profile'] = $name->getAttribute('href'); // ссылка на его профиль
 				$this->links[$course_name][$task_id][$student_name]['grade'] = $moodle_url.$task->getAttribute('href');
 				$this->links[$course_name][$task_id][$student_name]['answers'] = array();
+				$this->links[$course_name][$task_id][$student_name]['lastModified'] =  strtotime($xpath->query('//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c5"]')->item(0)->nodeValue);
 				$task_index = 0;
 				while (true) {
 					if ($xpath->query('.//*[@id="mod-poasassignment-submissions_r'.$row_index.'_c3"]//@href')->item($task_index) !== null) {
@@ -519,6 +537,14 @@ class MoodleParser
 			echo '</p>';
 		}
 		echo '<br>';
+	}
+	/**
+     * Инициализирует данными файла с датами тестирования
+     */
+	public function initTestTime()
+	{
+		$j = file_get_contents('TestingTime.json');
+		$this->test_time = json_decode($j, true);
 	}
 
 	/**
@@ -565,6 +591,9 @@ class MoodleParser
 
 			if ($ini_array['files_download_to'] !== null) {
 				$this->files_download_to = $ini_array['files_download_to'];
+			}
+			if ($ini_array['check_only_new_work'] !== null) {
+				$this->check_only_new_work = $ini_array['check_only_new_work'];
 			}
 
 			if ($ini_array['path_to_winrar'] !== null) {
@@ -778,7 +807,7 @@ class MoodleParser
 						curl_close($ch);
 						fclose($stderr);
 						$dir = $this->files_download_to;
-
+						// Создание папок
 						if (!is_dir($dir)) {
 							mkdir($dir);
 						}
@@ -798,6 +827,7 @@ class MoodleParser
 						fwrite($fp, $result);
 						fclose($fp);
 						$errors = array();
+						//Распаковка работ
 						$file_path = $dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name.DIRECTORY_SEPARATOR.$name;
 						if ($this->unpack_answers) {
 							$this->unpackFile($file_path.DIRECTORY_SEPARATOR.$output_filename, $errors);
@@ -806,27 +836,33 @@ class MoodleParser
 						$this->translitAllFiles($dir.DIRECTORY_SEPARATOR.$course_name.DIRECTORY_SEPARATOR.$task_name.DIRECTORY_SEPARATOR.$name);
 
 					}
+					// Тестирование работ
+					if ($this->build_and_compile ) {
+						if(!$this->check_only_new_work || $this->test_time[$course_name][$task_name][$name]['lastModified']!=$this->links[$or_course_name][$or_task_name][$or_name]['lastModified']){
+							$this->test_time[$course_name][$task_name][$name]['lastModified'] =$this->links[$or_course_name][$or_task_name][$or_name]['lastModified'];
+							Tester::testOnPath($file_path, $errors);
+							if(!empty($errors)) {
+								$task = $this->links[$or_course_name][$or_task_name][$or_name]['grade'];
+								if($this->grade_if_fail!=-1) {
+									Reporter::gradeAnswer($task,$this->grade_if_fail,$this->cookie_file);
+								}
+								if ($this->write_on_comment) {
+									Reporter::sendComment($errors, $task, $this->cookie_file);
+								}
+							}
 
-					if ($this->build_and_compile) {
-						Tester::testOnPath($file_path, $errors);
-						if(!empty($errors)) {
-							$task = $this->links[$or_course_name][$or_task_name][$or_name]['grade'];
-							if($this->grade_if_fail!=-1) {
-								Reporter::gradeAnswer($task,$this->grade_if_fail,$this->cookie_file);
-							}
-							if ($this->write_on_comment) {
-								Reporter::sendComment($errors, $task, $this->cookie_file);
-							}
+						}else{
+							echo 'Тестирование не было произведенно, так как работа студента не изменилась с прошлой проверки';
 						}
 					}
 					echo '<br>';
-
 					Cleaner::clearDir($file_path);
 				}
 			}
 		}
 	}
 }
+
 error_reporting(E_ALL & ~E_NOTICE);
 ob_start();
 $succes_test=true;
@@ -867,3 +903,5 @@ if ($mp->getSendResultOnEmail()) {
 		$logFile = Reporter::writeOnFile($my_html);
 	Reporter::sendMailWithFile($logFile, $mp->getEmail());
 }
+
+Reporter::writeTimeOnFile(json_encode($mp->testTime(),JSON_PRETTY_PRINT));
