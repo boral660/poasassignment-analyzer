@@ -543,8 +543,11 @@ class MoodleParser
      */
 	public function initTestTime()
 	{
-		$j = file_get_contents('TestingTime.json');
-		$this->test_time = json_decode($j, true);
+		$file='TestingTime.json';
+		if (file_exists($file)) {
+			$j = file_get_contents('TestingTime.json');
+			$this->test_time = json_decode($j, true);
+        }
 	}
 
 	/**
