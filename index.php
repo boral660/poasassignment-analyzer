@@ -437,6 +437,8 @@ class MoodleParser
 				$this->links[$course_name][$task_id][$student_name]['grade'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c5"]//@href')->item(0)->nodeValue;
 				$this->links[$course_name][$task_id][$student_name]['answers'] = array();
 				$this->links[$course_name][$task_id][$student_name]['lastGrade'] = $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c10"]')->item(0)->nodeValue;
+				$this->links[$course_name][$task_id][$student_name]['answers'] = array();
+				$this->links[$course_name][$task_id][$student_name]['lastModified'] =  $xpath->query('//*[@id="mod_assign_grading_r'.$row_index.'_c7"]')->item(0)->nodeValue;
 				$task_index = 0;
 				while (true) {
 					if ($xpath->query('.//*[@id="mod_assign_grading_r'.$row_index.'_c8"]//@href')->item($task_index) !== null) {
