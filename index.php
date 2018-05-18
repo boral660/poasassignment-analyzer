@@ -685,11 +685,8 @@ class MoodleParser
 		}
 
 		if ($this->task_url == null && $this->protocol_url == null) {
-			if($this->task_url == null)
-				array_push($params, 'task_url');
-
-			if($this->$this->protocol_url == null)
-				array_push($params, 'protocol_url');
+			array_push($params, 'task_url');
+			array_push($params, 'protocol_url');
 		}
 
 		if ($this->send_result_on_email == true && $this->email == null) {
@@ -706,10 +703,6 @@ class MoodleParser
 		if ($this->build_and_compile == true) {
 			if (Tester::getCMakePath() == null) {
 				array_push($params, 'path_to_CMake');
-			}
-
-			if (Tester::getGeneratorForCMake() == null) {
-				array_push($params, 'generator_for_CMake');
 			}
 
 			if (Tester::getQMakePath() == null) {
