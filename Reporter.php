@@ -82,7 +82,7 @@ class Reporter
         // Закачиваем файл
         $fp = fopen($filepath, "r");
         if (!$fp) {
-            echo "Не удается открыть файл";
+            echo "Не удается открыть файл - " . $filepath;
             exit();
         }
         $file = fread($fp, filesize($filepath));
@@ -96,7 +96,9 @@ class Reporter
         $message_part .= "\r\n--$boundary--\r\n";
         $multipart .= $message_part;
 
-        mail($email, $subject, $multipart, $headers);
+       if(!mail($email, $subject, $multipart, $headers))
+             echo "Не удалось отправить сообщение на электронную почту";
+
     }
 
     /**
