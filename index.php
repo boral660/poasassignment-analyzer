@@ -698,11 +698,11 @@ class MoodleParser
 			array_push($params, 'send_from_email');
 		}
 
-		if ($this->unpack_answers == true && $this->path_to_winrar == null) {
+		if ($this->unpack_answers == true && $this->path_to_winrar == null && !$this->linux_client) {
 			array_push($params, 'path_to_winrar');
 		}
 
-		if ($this->build_and_compile == true) {
+		if ($this->build_and_compile == true && !$this->linux_client) {
 			if (Tester::getCMakePath() == null) {
 				array_push($params, 'path_to_CMake');
 			}
