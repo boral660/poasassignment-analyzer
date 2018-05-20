@@ -759,8 +759,9 @@ class MoodleParser
 						break;
 				}		
 			} else {
-				$comand = '"'.$this->path_to_winrar.'" x -o+ "'.$file_path.'" "'.$path.'" 2> rarError.txt';
+				$comand = '"'.$this->path_to_winrar.'" x -o+ "'.$file_path.'" "'.$path.'"';
 			}
+			$command .= ' 2> rarError.txt';
 			exec($comand, $error);
 			$header = '[Fail] Ошибка при распаковке файла: ';
 			Tester::readErrorOnFile('./rarError.txt', $header, $errors);
